@@ -6,7 +6,7 @@ Small prrof-of-concept client to connect to Electrolux and AEG cleaner robots.
 Usage
 -----
 
-First you need to getyour local robot pw to talk to the robot.
+First you need to get your local robot pw to talk to the robot.
 
 	$ ./purei9-cli.py cloud user@email.com mypassword
 	[
@@ -46,7 +46,7 @@ Now you can connect to your robot.
 More usage:
 
 	Usage: ./purei9-cli.py [cloud <email> <password>]
-		./purei9-cli.py [local <address> <localpw> [status|firmware|start|home]]
+	       ./purei9-cli.py [local <address> <localpw> [status|firmware|start|home]]
 
 		cloud: connect to purei9 cloud to get your localpw
 
