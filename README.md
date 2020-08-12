@@ -8,6 +8,11 @@ Compatibility
 
 Only tested with an AEX RX9 (aka purei9) first Generation.
 
+Security
+--------
+
+Other than the purei9 app, this tool does not verify the robots TLS certificate, so beware of MitM's in your LAN, eavedropping on your robot. In case you are curious how the trust model works anyway: The TLS certificate of the robot is self signed and verified against a known public key which is gathered from the purei9 cloud.
+
 Usage
 -----
 
