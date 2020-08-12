@@ -1,7 +1,7 @@
 purei9-cli
 ==========
 
-Small prrof-of-concept client to connect to Electrolux and AEG cleaner robots.
+Small proof-of-concept client to connect to Electrolux and AEG cleaner robots.
 
 Usage
 -----
