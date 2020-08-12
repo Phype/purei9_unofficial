@@ -3,6 +3,11 @@ purei9-cli
 
 Small proof-of-concept client to connect to Electrolux and AEG cleaner robots.
 
+Compatibility
+-------------
+
+Only tested with an AEX RX9 (aka purei9) first Generation.
+
 Usage
 -----
 
