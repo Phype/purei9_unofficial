@@ -16,7 +16,7 @@ Other than the purei9 app, this tool does not verify the robot's TLS certificate
 Disclaimer
 ----------
 
-The developer of this software is not Affiliated at all with Electrolux. Electrolux, AEG and Purei9 are brand/product names by Electrolux AB which i do not have any rights upon.
+The developer of this software is not affiliated at all with Electrolux. Electrolux, AEG and Purei9 are brand/product names by Electrolux AB which i do not have any rights upon.
 
 Usage
 -----
