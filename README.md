@@ -23,7 +23,7 @@ Usage
 
 First you need to get your local robot pw to talk to the robot.
 
-	$ ./purei9-cli.py cloud user@email.com mypassword
+	$ ./purei9.py cloud user@email.com mypassword
 	[
 		{
 			"RobotID": "900395798357985798375972",
@@ -37,7 +37,7 @@ First you need to get your local robot pw to talk to the robot.
 	
 Now you can connect to your robot.
 
-	$ ./purei9-cli.py local 192.168.1.101 29379204 status
+	$ ./purei9.py local 192.168.1.101 29379204 status
 	
 	 [<] Connecting to 192.168.1.101:3002
 	 [>] Connnected
@@ -60,8 +60,8 @@ Now you can connect to your robot.
 
 More usage:
 
-	Usage: ./purei9-cli.py [cloud <email> <password>]
-	       ./purei9-cli.py [local <address> <localpw> [status|firmware|start|home]]
+	Usage: ./purei9.py [cloud <email> <password>]
+	       ./purei9.py [local <address> <localpw> [status|firmware|start|home]]
 
 		cloud: connect to purei9 cloud to get your localpw
 
