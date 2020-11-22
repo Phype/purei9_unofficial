@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import socket
 import ssl
 import struct
@@ -11,6 +9,9 @@ import base64
 import hashlib
 
 import requests
+import requests.auth
+
+import tabulate
 
 # import hexdump
 
@@ -26,11 +27,13 @@ def log(lvl, msg):
 class CloudClient:
 	
 	def __init__(self, email, password):
+		password = CloudClient.chksum(password)
 		self.apiurl = "https://mobile.rvccloud.electrolux.com/api/v1"
 		self.credentials = {
-			"AccountPassword": CloudClient.chksum(password),
+			"AccountPassword": password,
 			"Email": email,
 		}
+		self.httpauth = requests.auth.HTTPBasicAuth(email, password)
 		
 	@staticmethod
 	def chksum(pw):
@@ -41,13 +44,60 @@ class CloudClient:
 	def getRobots(self):
 		r = requests.post(self.apiurl + "/accounts/ConnectToAccount", json=self.credentials)
 		try:
-			return r.json()["RobotList"]
+			return list(map(lambda r: CloudRobot(self, r["RobotID"], r), r.json()["RobotList"]))
 		except:
 			log("!", "Cannot login: " + str(r))
 			
 			for k in r.headers:
 				log("i", k + ": " + r.headers[k])
 			log("i", r.text)
+			
+	def getRobot(self, id):
+		return CloudRobot(self, id)
+	
+
+class CloudRobot:
+	
+	def __init__(self, cloudclient, id, info=None):
+		self.cloudclient = cloudclient
+		self.id          = id
+		self.info        = info
+		
+		if info:
+		
+			self.name           = info["RobotName"]
+			self.is_connected   = info["Connected"]
+			self.firmware       = info["FirmwareVersion"]
+			self.robot_status   = info["RobotStatus"]
+			self.battery_status = info["BatteryStatus"]
+			self.local_pw       = info["LocalRobotPassword"]
+		
+	def getMaps(self):
+		r = requests.get(self.cloudclient.apiurl + "/robots/" + self.id + "/interactivemaps", auth=self.cloudclient.httpauth)
+		
+		return list(map(lambda x: CloudMap(self, x["Id"]), r.json()))
+	
+class CloudMap:
+	
+	def __init__(self, cloudrobot, id):
+		
+		self.cloudclient = cloudrobot.cloudclient
+		self.robot       = cloudrobot
+		self.id          = id
+		self.info        = None
+		self.image       = None
+		
+	def get(self):
+		r = requests.get(self.cloudclient.apiurl + "/robots/" + self.robot.id + "/interactivemaps/" + self.id, auth=self.cloudclient.httpauth)
+		
+		js = r.json()
+		
+		self.image = base64.b64decode(js["PngImage"])
+		
+		del js["PngImage"]
+		self.info = js
+		
+		return self.info
 
 class RobotClient:
 	
@@ -123,7 +173,6 @@ class RobotClient:
 		
 		if data:
 			pkt += data
-			# hexdump.hexdump(data)
 		
 		self.sock.send(pkt)
 		
@@ -136,10 +185,6 @@ class RobotClient:
 		data = self.sock.recv(length)
 		
 		log(">", "recv " + str(minor) + " user1=" + str(user1) + " user2=" + str(user2) + " len=" + str(length))
-		
-		if data != None:
-			# hexdump.hexdump(data)
-			pass
 		
 		return minor, data, user1, user2
 	
@@ -236,61 +281,110 @@ class RobotClient:
 		}
 	
 
-def usage():
-	print("Usage: " + sys.argv[0] + " [cloud <email> <password>]")
-	print("       " + sys.argv[0] + " [local <address> <localpw> [status|firmware|start|home]]")
-	print("")
-	print("    cloud: connect to purei9 cloud to get your localpw")
-	print("")
-	print("    local: connect to robot at <address> using <localpw>")
-	print("           status   - show basic status")
-	print("           firmware - show firmware info")
-	print("           start    - start cleaning")
-	print("           home     - stop cleaning and go home")
+if __name__ == "__main__":
 
-if len(sys.argv) < 2:
-	usage()
+	def usage():
+		print("Usage: " + sys.argv[0] + " [cloud <email> <password>] [status]")
+		print("       " + sys.argv[0] + " [cloud <email> <password>] maps <robotid> [write_files]")
+		print("       " + sys.argv[0] + " [local <address> <localpw> [status|firmware|start|home]]")
+		print("")
+		print("    cloud: connect to purei9 cloud to get your localpw (does not work currently)")
+		print("")
+		print("    local: connect to robot at <address> using <localpw>")
+		print("           status   - show basic status")
+		print("           firmware - show firmware info")
+		print("           start    - start cleaning")
+		print("           home     - stop cleaning and go home")
 
-elif sys.argv[1] == "cloud":
-	cc = CloudClient(sys.argv[2], sys.argv[3])
-	robots = cc.getRobots()
-	print(json.dumps(robots, indent=2))
+	if len(sys.argv) < 2:
+		usage()
 
-elif sys.argv[1] == "local":
-	rc = RobotClient(sys.argv[2], sys.argv[3])
-
-	if rc.connect():
+	elif sys.argv[1] == "cloud":
+		cc = CloudClient(sys.argv[2], sys.argv[3])
+		cmd = "status"
 		
 		if len(sys.argv) > 4:
-			action = sys.argv[4]
-		else:
-			action = "status"
+			cmd = sys.argv[4]
+		
+		if cmd == "status":
 			
-		if action == "start":
-			print(json.dumps(rc.startclean(), indent=2))
+			robots = cc.getRobots()
 			
-		elif action == "home":
-			print(json.dumps(rc.gohome(), indent=2))
+			tbl = []
+			tbl_hdr = ["Robot ID", "Name", "Localpw", "Connected", "Status", "Battery", "Firmware"]
+			
+			for robot in robots:
 				
-		elif action == "firmware":
-			print(json.dumps(rc.getfirmware(), indent=2))
+				tbl.append([robot.id, robot.name, robot.local_pw, robot.is_connected, robot.robot_status, robot.battery_status, robot.firmware])
 			
-		elif action == "status":
-			print(json.dumps(rc.info(), indent=2))
-		
+			print(tabulate.tabulate(tbl, headers=tbl_hdr, tablefmt="pretty"))
+			
+		elif cmd == "maps":
+			if len(sys.argv) > 5:
+				id = sys.argv[5]
+			else:
+				print("Requires argument: Robot ID")
+				sys.exit(0)
+			
+			write = False
+			if len(sys.argv) > 6:
+				write = True
+			
+			robot = cc.getRobot(id)
+			
+			tbl = []
+			tbl_hdr = ["Map ID", "Timestamp"]
+			
+			for m in robot.getMaps():
+				
+				m.get()
+				
+				tbl.append([m.id, m.info["Timestamp"]])
+				
+				if write:
+					with open(m.id + ".png", "wb") as fp:
+						fp.write(m.image)
+					
+			print(tabulate.tabulate(tbl, headers=tbl_hdr, tablefmt="pretty"))
+			
 		else:
-			log("!", "Unknown action " + action)
-			print(json.dumps(None))
-		
-		# print("ID:       " + rc.robot_id)
-		# print("Name:     " + rc.getname())
-		# print("Status:   " + rc.getstatus())
-		# print("Settings: " + str(rc.getsettings()))
-		
-		# print(json.dumps(rc.getfirmware(), indent=2))
-		
-	else:
-		print(json.dumps(None))
+			print("Error: Unknown cmd " + cmd)
 
-else:
-	usage()
+	elif sys.argv[1] == "local":
+		rc = RobotClient(sys.argv[2], sys.argv[3])
+
+		if rc.connect():
+			
+			if len(sys.argv) > 4:
+				action = sys.argv[4]
+			else:
+				action = "status"
+				
+			if action == "start":
+				print(json.dumps(rc.startclean(), indent=2))
+				
+			elif action == "home":
+				print(json.dumps(rc.gohome(), indent=2))
+					
+			elif action == "firmware":
+				print(json.dumps(rc.getfirmware(), indent=2))
+				
+			elif action == "status":
+				print(json.dumps(rc.info(), indent=2))
+			
+			else:
+				log("!", "Unknown action " + action)
+				print(json.dumps(None))
+			
+			# print("ID:       " + rc.robot_id)
+			# print("Name:     " + rc.getname())
+			# print("Status:   " + rc.getstatus())
+			# print("Settings: " + str(rc.getsettings()))
+			
+			# print(json.dumps(rc.getfirmware(), indent=2))
+			
+		else:
+			print(json.dumps(None))
+
+	else:
+		usage()
