@@ -13,6 +13,8 @@ import requests.auth
 
 import tabulate
 
+from message import BinaryMessage
+
 # import hexdump
 
 DEBUG = True
@@ -98,6 +100,50 @@ class CloudMap:
 		self.info = js
 		
 		return self.info
+
+class BinaryPacket:
+    
+    MAGIC = 30194250
+    
+    def __init__(self):
+        self.magic = BinaryPacket.MAGIC
+        self.major = 1
+        self.minor = 0
+        self.user1 = 0
+        self.user2 = 0
+        self.payload = b""
+    
+    def to_wire(self):
+        return struct.pack("<IIIIII", self.magic, self.major, self.minor, self.user1, self.user2, len(self.payload)) + self.payload
+    
+    @staticmethod
+    def from_wire(packet):
+        if len(packet) < 24:
+            raise Exception("Packet too short")
+        
+        self = BinaryPacket()
+        
+        self.magic, self.major, self.minor, self.user1, self.user2, length = struct.unpack("<IIIIII", packet[:24])
+        
+        if not(self.magic == BinaryPacket.MAGIC):
+            raise Exception("Magic mismatch")
+        
+        self.payload = packet[24:]
+        
+        if not(len(self.payload) == length):
+            raise Exception("Packet length mismatch")
+        
+        return self
+    
+    def __str__(self):
+        return "BinaryPacket " + str({
+            "magic": self.magic,
+            "major": self.major,
+            "minor": self.minor,
+            "user1": self.user1,
+            "user2": self.user2,
+            "payload": self.payload,
+        })
 
 class RobotClient:
 	
@@ -280,6 +326,52 @@ class RobotClient:
 			"user2": user2
 		}
 	
+def find_robots(timeout = 0.2, retry = 1):
+
+	robots_found = []
+	
+	broadcast_address = "255.255.255.255"
+	robot_port        = 3000
+	
+	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
+	s.settimeout(timeout)
+	s.bind(("0.0.0.0", 0))
+	s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+	
+	local_endpoint = s.getsockname()
+	local_port     = local_endpoint[1]
+	
+	pkt = BinaryMessage()
+	pkt.minor = 1002 #GET_ADDRESS_REQUEST
+	pkt.user1 = local_port
+	pkt.user2 = 0xDEADBEEF # 8094
+	
+	s.sendto(pkt.to_wire(), (broadcast_address, robot_port))
+	
+	while True:
+		
+		sender = None
+	
+		try:
+			pkt, sender = s.recvfrom(0xffff)
+		except socket.timeout:
+			break
+		
+		pkt = BinaryMessage.from_wire(pkt)
+		
+		if pkt.major == 6 and pkt.minor == 4001:
+			robots_found.append({
+				"address": sender[0],
+				"data": pkt.parsed
+			})
+			
+	s.close()
+	
+	if robots_found == [] and retry > 0:
+		return find_robots(timeout, retry - 1)
+	else:
+		return robots_found
+		
 
 if __name__ == "__main__":
 
@@ -287,6 +379,7 @@ if __name__ == "__main__":
 		print("Usage: " + sys.argv[0] + " [cloud <email> <password>] [status]")
 		print("       " + sys.argv[0] + " [cloud <email> <password>] maps <robotid> [write_files]")
 		print("       " + sys.argv[0] + " [local <address> <localpw> [status|firmware|start|home]]")
+		print("       " + sys.argv[0] + " [search]")
 		print("")
 		print("    cloud: connect to purei9 cloud to get your localpw (does not work currently)")
 		print("")
@@ -295,6 +388,8 @@ if __name__ == "__main__":
 		print("           firmware - show firmware info")
 		print("           start    - start cleaning")
 		print("           home     - stop cleaning and go home")
+		print("")
+		print("    search: search for robots in the local network")
 
 	if len(sys.argv) < 2:
 		usage()
@@ -385,6 +480,19 @@ if __name__ == "__main__":
 			
 		else:
 			print(json.dumps(None))
+			
+	
+	elif sys.argv[1] == "search":
+		robots = find_robots()
+		
+		tbl_hdr = ["Name", "RobotID", "Address"]
+		tbl = []
+		
+		for robot in robots:
+			tbl.append([robot["address"], robot["data"]["RobotID"], robot["data"]["RobotName"]])
+		
+		print(tabulate.tabulate(tbl, headers=tbl_hdr, tablefmt="pretty"))
+		
 
 	else:
 		usage()
