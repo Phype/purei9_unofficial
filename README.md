@@ -35,9 +35,18 @@ First you need to get your local robot pw to talk to the robot.
 		}
 	]
 	
+You can also use the tool to locate any robots in the network
+
+	$ python3 purei9.py search
+	+---------------+--------------------------+---------+
+	|     Name      |         RobotID          | Address |
+	+---------------+--------------------------+---------+
+	| 192.168.1.101 | 900395798357985798375972 | Cleaner |
+	+---------------+--------------------------+---------+
+	
 Now you can connect to your robot.
 
-	$ ./purei9.py local 192.168.1.101 29379204 status
+	$ python3 purei9.py local 192.168.1.101 29379204 status
 	
 	 [<] Connecting to 192.168.1.101:3002
 	 [>] Connnected
@@ -60,14 +69,18 @@ Now you can connect to your robot.
 
 More usage:
 
-	Usage: ./purei9.py [cloud <email> <password>]
-	       ./purei9.py [local <address> <localpw> [status|firmware|start|home]]
+	Usage: purei9.py [cloud <email> <password>] [status]
+	       purei9.py [cloud <email> <password>] maps <robotid> [write_files]
+	       purei9.py [local <address> <localpw> [status|firmware|start|home]]
+	       purei9.py [search]
 
-		cloud: connect to purei9 cloud to get your localpw
+	    cloud: connect to purei9 cloud to get your localpw (does not work currently)
 
-		local: connect to robot at <address> using <localpw>
-			status   - show basic status
-			firmware - show firmware info
-			start    - start cleaning
-			home     - stop cleaning and go home
+	    local: connect to robot at <address> using <localpw>
+		   status   - show basic status
+		   firmware - show firmware info
+		   start    - start cleaning
+		   home     - stop cleaning and go home
+
+	    search: search for robots in the local network
 
