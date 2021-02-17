@@ -39,7 +39,7 @@ You can also use the tool to locate any robots in the network
 
 	$ python3 purei9.py search
 	+---------------+--------------------------+---------+
-	|     Name      |         RobotID          | Address |
+	|   Address     |         RobotID          |  Name   |
 	+---------------+--------------------------+---------+
 	| 192.168.1.101 | 900395798357985798375972 | Cleaner |
 	+---------------+--------------------------+---------+

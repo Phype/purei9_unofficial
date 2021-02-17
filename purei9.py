@@ -485,7 +485,7 @@ if __name__ == "__main__":
 	elif sys.argv[1] == "search":
 		robots = find_robots()
 		
-		tbl_hdr = ["Name", "RobotID", "Address"]
+		tbl_hdr = ["Address", "RobotID", "Name"]
 		tbl = []
 		
 		for robot in robots:
