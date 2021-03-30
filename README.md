@@ -8,6 +8,8 @@ Compatibility
 
 Only tested with an AEX RX9 (aka purei9) first Generation.
 
+Update: Also seems to work with Purei9.2: https://community.home-assistant.io/t/integrating-eectrolux-pure-i9-robotic-vacuum/78648/11
+
 Security
 --------
 
