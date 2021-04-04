@@ -20,12 +20,23 @@ Disclaimer
 
 The developer of this software is not affiliated at all with Electrolux. Electrolux, AEG and Purei9 are brand/product names by Electrolux AB which i do not have any rights upon.
 
+Installation
+------------
+
+Install via pip
+
+	pip install purei9_unofficial 
+	
+If you want to use the CLI (not only the library) you additionally need to install tabulate
+
+	pip install tabulate 
+
 Usage
 -----
 
 First you need to get your local robot pw to talk to the robot.
 
-	$ ./purei9.py cloud user@email.com mypassword
+	$ python -m purei9_unofficial cloud user@email.com mypassword
 	[
 		{
 			"RobotID": "900395798357985798375972",
@@ -39,7 +50,7 @@ First you need to get your local robot pw to talk to the robot.
 	
 You can also use the tool to locate any robots in the network
 
-	$ python3 purei9.py search
+	$ python -m purei9_unofficial search
 	+---------------+--------------------------+---------+
 	|   Address     |         RobotID          |  Name   |
 	+---------------+--------------------------+---------+
@@ -48,7 +59,7 @@ You can also use the tool to locate any robots in the network
 	
 Now you can connect to your robot.
 
-	$ python3 purei9.py local 192.168.1.101 29379204 status
+	$ python -m purei9_unofficial local 192.168.1.101 29379204 status
 	
 	 [<] Connecting to 192.168.1.101:3002
 	 [>] Connnected
@@ -71,10 +82,10 @@ Now you can connect to your robot.
 
 More usage:
 
-	Usage: purei9.py [cloud <email> <password>] [status]
-	       purei9.py [cloud <email> <password>] maps <robotid> [write_files]
-	       purei9.py [local <address> <localpw> [status|firmware|start|home]]
-	       purei9.py [search]
+	Usage: purei9_unofficial [cloud <email> <password>] [status]
+	       purei9_unofficial [cloud <email> <password>] maps <robotid> [write_files]
+	       purei9_unofficial [local <address> <localpw> [status|firmware|start|home]]
+	       purei9_unofficial [search]
 
 	    cloud: connect to purei9 cloud to get your localpw (does not work currently)
 
@@ -85,4 +96,9 @@ More usage:
 		   home     - stop cleaning and go home
 
 	    search: search for robots in the local network
+
+Library usage
+-------------
+
+If you want to use the library instead, i suggest to have a look at the [CLI implementation](./src/purei9_unofficial/__main__.py).
 
