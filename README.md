@@ -1,5 +1,5 @@
-purei9-cli
-==========
+purei9_unofficial
+=================
 
 Small proof-of-concept client to connect to Electrolux and AEG cleaner robots.
 
