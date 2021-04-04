@@ -10,19 +10,55 @@ class BinaryMessage:
     MAJOR_BLOB      = 4
     MAJOR_BLOBMAP   = 5
     MAJOR_STRINGMAP = 6
+
+    MSG_HELLO        = 3000
+    MSG_LOGIN        = 3005
+    MSG_PING         = 1000
+    MSG_GET_ADDRESS_REQUEST = 1002
+    MSG_GET_ADDRESS_RESPONSE = 4001
+    MSG_GETNAME      = 1011
+    MSG_GETFIRMWARE  = 1010
+    MSG_GETSETTINGS  = 1023
+    MSG_STARTCLEAN   = 1014
+    MSG_GETSTATUS    = 1012
     
-    def __init__(self):
+    def __init__(self, major = 1, minor = 0, user1 = 0, user2 = 0, payload = b""):
         self.magic = BinaryMessage.MAGIC
-        self.major = 1
-        self.minor = 0
-        self.user1 = 0
-        self.user2 = 0
-        self.payload = b""
-        
+        self.major = major
+        self.minor = minor
+        self.user1 = user1
+        self.user2 = user2
+        self.payload = payload
         self.parsed = None
     
     def to_wire(self):
         return struct.pack("<IIIIII", self.magic, self.major, self.minor, self.user1, self.user2, len(self.payload)) + self.payload
+    
+    @staticmethod
+    def HeaderOnly(minor, user1 = 0, user2 = 0):
+        return BinaryMessage(BinaryMessage.MAJOR_HDRONLY, minor, user1, user2)
+    
+    @staticmethod
+    def Text(minor, parsed, user1 = 0, user2 = 0):
+        return BinaryMessage(BinaryMessage.MAJOR_TEXT, minor, user1, user2, parsed.encode("utf-8"))
+    
+    ###
+    
+    @staticmethod
+    def from_stream(stream):
+        hdr = stream.read(24)
+        
+        if not(len(hdr) == 24):
+            raise Exception("Read too short")
+        
+        magic, major, minor, user1, user2, length = struct.unpack("<IIIIII", hdr)
+        
+        body = stream.read(length)
+        
+        if not(len(body) == length):
+            raise Exception("Read too short")
+        
+        return BinaryMessage.from_wire(hdr + body)
     
     @staticmethod
     def from_wire(packet):
@@ -46,7 +82,10 @@ class BinaryMessage:
         if self.major == BinaryMessage.MAJOR_HDRONLY:
             pass
         
-        if self.major == BinaryMessage.MAJOR_STRINGMAP:
+        elif self.major == BinaryMessage.MAJOR_TEXT:
+            self.parsed = self.payload.decode("utf-8")
+        
+        elif self.major == BinaryMessage.MAJOR_STRINGMAP:
             
             data = self.payload
             obj  = {}
@@ -73,6 +112,8 @@ class BinaryMessage:
                 obj[key.decode("utf-8")] = value.decode("utf-8")
         
             self.parsed = obj
+            
+        # print("Debug pkt = " + str(self))
         
         return self
     
