@@ -100,5 +100,25 @@ More usage:
 Library usage
 -------------
 
-If you want to use the library instead, i suggest to have a look at the [CLI implementation](./src/purei9_unofficial/__main__.py).
+If you want to use the library instead, here is some example code which assumes (1) you only have one robot in your electrolux account and (2) the robot is located in the same network as the computer you are running the code on. You can also have a look at the [CLI implementation](./src/purei9_unofficial/__main__.py).
+
+    from purei9_unofficial.cloud import CloudClient
+    from purei9_unofficial.local import RobotClient, find_robots
+
+    # Get the list of robots in the cloud account
+    cloudclient  = CloudClient("account_email", "account_password")
+    robots       = cloudclient.getRobots()
+
+    # Get the local robot password to authenticate at our robot
+    localpw      = robots[0].getlocalpw()
+
+    # Get the robots in our network
+    local_robots = find_robots()
+
+    # Create a RobotClient to connect to it
+    robotclient  = RobotClient(local_robots[0].address)
+    robotclient.connect(localpw)
+
+    # Gets the status
+    print(robotclient.getstatus())
 
