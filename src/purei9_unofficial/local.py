@@ -9,9 +9,9 @@ from typing import List
 from .util import log
 from .message import BinaryMessage
 
-from .common import RobotStates, BatteryStatus
+from .common import AbstractRobot, RobotStates, BatteryStatus
 
-class RobotClient:
+class RobotClient(AbstractRobot):
     
     CLEAN_PLAY  = 1
     CLEAN_SPOT  = 2
@@ -60,15 +60,18 @@ class RobotClient:
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GETNAME))
         return pkt.parsed
     
-    def getfirmware(self) -> dict:
-        """Get robot's firmware properties"""
+    def getfirmware(self) -> str:
+        """Get robot's firmware version"""
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GETFIRMWARE))
         return pkt.parsed["FirmwareVersion"]
     
-    def getbattery(self) -> dict:
-        """Get the current robot settings"""
+    def getbattery(self) -> str:
+        """Get the current robot battery status"""
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GET_BATTERY_STATUS_REQUEST))
         return BatteryStatus[pkt.user1]
+    
+    def isconnected(self) -> bool:
+        return self.stream != None
     
     ###
     

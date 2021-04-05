@@ -8,25 +8,21 @@ import requests
 import requests.auth
 
 from .util import log
+from .common import AbstractRobot, RobotStates, BatteryStatus
 
-ROBOT_STATES = {
-    1: "Cleaning",
-    2: "Paused Cleaning",
-    3: "Spot Cleaning",
-    4: "Paused Spot Cleaning",
-    5: "Return",
-    6: "Paused Return",
-    7: "Return for Pitstop",
-    8: "Paused Return for Pitstop",
-    9: "Charging",
-    10: "Sleeping",
-    11: "Error",
-    12: "Pitstop",
-    13: "Manual Steering",
-    14: "Firmware Upgrade"
-}
+def do_http(method, url, retries=2, **kwargs):
+    try:
+        log("<", url)
+        r = requests.request(method, url, timeout=2, **kwargs)
+        r.raise_for_status()
+        log(">", r.text)
+        return r
+    except:
+        log(">", "HTTP error")
+        if retries > 0:
+            return do_http(method, url, retries-1, **kwargs)
 
-class CloudRobot:
+class CloudRobot(AbstractRobot):
     
     def __init__(self, cloudclient, id, info=None):
         self.cloudclient = cloudclient
@@ -49,13 +45,7 @@ class CloudRobot:
             self.local_pw       = None
         
     def getstatus(self):
-        return ROBOT_STATES[self.robot_status]
-    
-    def startclean(self):
-        raise Exception("Not implemented")
-    
-    def gohome(self):
-        raise Exception("Not implemented")
+        return RobotStates[self.robot_status]
         
     def getid(self) -> str():
         """Get the robot's id"""
@@ -65,13 +55,24 @@ class CloudRobot:
         """Get the robot's name"""
         return self.name
     
+    def getfirmware(self) -> str:
+        """Get robot's firmware version"""
+        return self.firmware
+    
+    def getbattery(self) -> str:
+        """Get the current robot battery status"""
+        return BatteryStatus[self.battery_status]
+    
+    def isconnected(self) -> bool:
+        return self.is_connected
+    
     ###
     
     def getlocalpw(self):
         return self.local_pw
         
     def getMaps(self):
-        r = requests.get(self.cloudclient.apiurl + "/robots/" + self.id + "/interactivemaps", auth=self.cloudclient.httpauth)
+        r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.id + "/interactivemaps", auth=self.cloudclient.httpauth)
         
         return list(map(lambda x: CloudMap(self, x["Id"]), r.json()))
 
@@ -95,9 +96,7 @@ class CloudClient:
     def getRobots(self) -> List[CloudRobot]:
         """Get all robots linked to the cloud account"""
         
-        url = self.apiurl + "/accounts/ConnectToAccount"
-        log("<", url)
-        r = requests.post(url, json=self.credentials)
+        r = do_http("POST", self.apiurl + "/accounts/ConnectToAccount", json=self.credentials)
         try:
             return list(map(lambda r: CloudRobot(self, r["RobotID"], r), r.json()["RobotList"]))
         except:
@@ -122,7 +121,7 @@ class CloudMap:
         self.image       = None
         
     def get(self):
-        r = requests.get(self.cloudclient.apiurl + "/robots/" + self.robot.id + "/interactivemaps/" + self.id, auth=self.cloudclient.httpauth)
+        r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.robot.id + "/interactivemaps/" + self.id, auth=self.cloudclient.httpauth)
         
         js = r.json()
         
@@ -135,7 +134,7 @@ class CloudMap:
 
 ###
 
-class CloudRobotv2:
+class CloudRobotv2(AbstractRobot):
     
     def __init__(self, cloudclient, id):
         self.cloudclient = cloudclient
@@ -146,60 +145,53 @@ class CloudRobotv2:
     def _getinfo(self):
         
         if self._info == None:
-            url = self.cloudclient.apiurl + "/Appliances/" + self.id
-            log("<", url)
-            r = requests.get(url, headers=self.cloudclient.headers)
-            r.raise_for_status()
+            r = do_http("GET", self.cloudclient.apiurl + "/Appliances/" + self.id, headers=self.cloudclient._getHeaders())
             self._info = r.json()["twin"]
-            
-            log(">", json.dumps(self._info, indent=2))
             
         return self._info
     
     def _getall(self):
-        url = self.cloudclient.apiurl + "/Domains/Appliances/" + self.id
-        log("<", url)
-        r = requests.get(url, headers=self.cloudclient.headers)
-        r.raise_for_status()
-        log(">", json.dumps(r.json(), indent=2))
+        r = do_http("GET", self.cloudclient.apiurl + "/Domains/Appliances/" + self.id, headers=self.cloudclient._getHeaders())
         
+        """
         url = self.cloudclient.apiurl + "/Domains/Appliances/" + self.id + "/Certificate"
         log("<", url)
-        r = requests.get(url, headers=self.cloudclient.headers)
+        r = requests.get(url, headers=self.cloudclient._getHeaders())
         r.raise_for_status()
         log(">", json.dumps(r.json(), indent=2))
         
         url = self.cloudclient.apiurl + "/Hashes/Appliances/" + self.id
         log("<", url)
-        r = requests.get(url, headers=self.cloudclient.headers)
+        r = requests.get(url, headers=self.cloudclient._getHeaders())
         r.raise_for_status()
         log(">", json.dumps(r.json(), indent=2))
         
         #url = self.cloudclient.apiurl + "/oaq/appliances/" + self.id
         #log("<", url)
-        #r = requests.get(url, headers=self.cloudclient.headers)
+        #r = requests.get(url, headers=self.cloudclient._getHeaders())
         #r.raise_for_status()
         #log(">", json.dumps(r.json(), indent=2))
         
         #url = self.cloudclient.apiurl + "/geo/appliances/" + self.id
         #log("<", url)
-        #r = requests.get(url, headers=self.cloudclient.headers)
+        #r = requests.get(url, headers=self.cloudclient._getHeaders())
         #r.raise_for_status()
         #log(">", json.dumps(r.json(), indent=2))
         
         url = self.cloudclient.apiurl + "/robots/" + self.id + "/LifeTime"
         log("<", url)
-        r = requests.get(url, headers=self.cloudclient.headers)
+        r = requests.get(url, headers=self.cloudclient._getHeaders())
         r.raise_for_status()
         log(">", json.dumps(r.json(), indent=2))
+        """
         
         
         
     ###
-        
+    
     def getstatus(self):
         status = self._getinfo()["properties"]["reported"]["robotStatus"]
-        return ROBOT_STATES[status]
+        return RobotStates[status]
     
     def startclean(self):
         self._sendCleanCommand("play")
@@ -214,46 +206,57 @@ class CloudRobotv2:
     def getname(self) -> str:
         """Get the robot's name"""
         return self._getinfo()["properties"]["reported"]["applianceName"]
+    
+    def getfirmware(self) -> str:
+        """Get robot's firmware version"""
+        return self._getinfo()["properties"]["reported"]["firmwareVersion"]
+    
+    def getbattery(self) -> str:
+        """Get the current robot battery status"""
+        bat = self._getinfo()["properties"]["reported"]["batteryStatus"]
+        return BatteryStatus[bat]
+    
+    def isconnected(self) -> bool:
+        return self._getinfo()["connectionState"] == "Connected"
         
     ###
     
     def _sendCleanCommand(self, command):
         # play|stop|home
         # curl -v https://api.delta.electrolux.com/api/Appliances/900277283814002391100106/Commands -X PUT --header "Content-Type: application/json" --header "Authorization: Bearer $TOKEN2" --data "{\"CleaningCommand\":\"home\"}" --http1.1 | jq -C .
-        r = requests.put(self.cloudclient.apiurl + "/Appliances/" + self.id + "/Commands", headers=self.cloudclient.headers, json={"CleaningCommand": command})
-        r.raise_for_status()
+        r = do_http("PUT", self.cloudclient.apiurl + "/Appliances/" + self.id + "/Commands", headers=self.cloudclient._getHeaders(), json={"CleaningCommand": command})
 
 class CloudClientv2:
     
     def __init__(self, username, password):
         
-        self.client_id = "Wellbeing"
+        self.client_id     = "Wellbeing"
         self.client_secret = "vIpsOBEenIvjbawqL4HA29"
         
         self.apiurl  = "https://api.delta.electrolux.com/api"
         self.headers = {}
         
-        self.getToken()
-        self.login(username, password)
+        self.username = username
+        self.password = password
+        self.token    = None
         
-    def getToken(self):
-        #TOKEN=$(curl -v https://api.delta.electrolux.com/api/Clients/Wellbeing -X POST --header "Content-Type: application/json" --data '{"ClientSecret":"vIpsOBEenIvjbawqL4HA29"}' --http1.1 | jq .accessToken -r )
-        url = self.apiurl + "/Clients/" + self.client_id
-        log("<", url)
-        r = requests.post(url, json={"ClientSecret":self.client_secret}, headers=self.headers)
-        r.raise_for_status()
-        token = r.json()["accessToken"]
-        self.headers = {"Authorization": "Bearer " + token}
+    def gettoken(self):
+        return self.token
+    
+    def settoken(self, token):
+        self.token = token
         
-    def login(self, username, password):
-        #TOKEN2=$(curl -v https://api.delta.electrolux.com/api/Users/Login -X POST --header "Content-Type: application/json" --header "Authorization: Bearer $TOKEN" --data "{\"Username\":\"$MAIL\",\"Password\":\"$PASS\"}" --http1.1 | jq .accessToken -r )
-        url = self.apiurl + "/Users/Login"
-        log("<", url)
-        r = requests.post(url, json={"Username":username, "Password": password}, headers=self.headers)
-        r.raise_for_status()
+    def _getHeaders(self):
         
-        token = r.json()["accessToken"]
-        self.headers = {"Authorization": "Bearer " + token}
+        if not(self.token):
+            
+            r = do_http("POST", self.apiurl + "/Clients/" + self.client_id, json={"ClientSecret":self.client_secret})
+            self.token = r.json()["accessToken"]
+            
+            r = do_http("POST", self.apiurl + "/Users/Login", json={"Username":self.username, "Password": self.password}, headers={"Authorization": "Bearer " + self.token})
+            self.token = r.json()["accessToken"]
+        
+        return {"Authorization": "Bearer " + self.token}
         
     def getRobot(self, id):
         for r in self.getRobots():
@@ -263,17 +266,14 @@ class CloudClientv2:
     def getRobots(self):
         #curl -v https://api.delta.electrolux.com/api/Domains/Appliances -X GET --header "Content-Type: application/json" --header "Authorization: Bearer $TOKEN2" --http1.1 | jq -C
         robots = []
-        
-        r = requests.get(self.apiurl + "/Domains/Appliances", headers=self.headers)
-        r.raise_for_status()
+        r = do_http("GET", self.apiurl + "/Domains/Appliances", headers=self._getHeaders())
         
         appliances = r.json()
         for appliance in appliances:
             #curl -v https://api.delta.electrolux.com/api/Appliances/900277283814002391100106 -X GET --header "Content-Type: application/json" --header "Authorization: Bearer $TOKEN2" --http1.1 | jq -C .
             appliance_id = appliance["pncId"]
-            r = requests.get(self.apiurl + "/AppliancesInfo/" + appliance_id, headers=self.headers)
-            r.raise_for_status()
             
+            r = do_http("GET", self.apiurl + "/AppliancesInfo/" + appliance_id, headers=self._getHeaders())
             if r.json()["device"] == "ROBOTIC_VACUUM_CLEANER":
                 robots.append(CloudRobotv2(self, appliance_id))
         

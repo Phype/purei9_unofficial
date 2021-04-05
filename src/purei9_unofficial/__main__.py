@@ -3,6 +3,8 @@ import json
 
 import tabulate
 
+from .util import setDebug
+
 from .local import RobotClient, find_robots
 from .cloud import CloudClient, CloudClientv2
 
@@ -46,7 +48,7 @@ elif sys.argv[1] == "cloudv2":
         
         for robot in robots:
             
-            tbl.append([robot.getid(), robot.getname(), "-", "-", robot.getstatus(), "-", "-"])
+            tbl.append([robot.getid(), robot.getname(), "-", robot.isconnected(), robot.getstatus(), robot.getbattery(), robot.getfirmware()])
         
         print(tabulate.tabulate(tbl, headers=tbl_hdr, tablefmt="pretty"))
     
@@ -76,7 +78,7 @@ elif sys.argv[1] == "cloud":
         
         for robot in robots:
             
-            tbl.append([robot.getid(), robot.getname(), robot.local_pw, robot.is_connected, robot.getstatus(), robot.battery_status, robot.firmware])
+            tbl.append([robot.getid(), robot.getname(), robot.getlocalpw(), robot.isconnected(), robot.getstatus(), robot.getbattery(), robot.getfirmware()])
         
         print(tabulate.tabulate(tbl, headers=tbl_hdr, tablefmt="pretty"))
         
@@ -138,7 +140,7 @@ elif sys.argv[1] == "local":
             
             tbl = []
             tbl_hdr = ["Robot ID", "Name", "Localpw", "Connected", "Status", "Battery", "Firmware"]
-            tbl.append([rc.getid(), rc.getname(), localpw, "-", rc.getstatus(), rc.getbattery(), rc.getfirmware()])
+            tbl.append([rc.getid(), rc.getname(), localpw, rc.isconnected(), rc.getstatus(), rc.getbattery(), rc.getfirmware()])
             
             print(tabulate.tabulate(tbl, headers=tbl_hdr, tablefmt="pretty"))
             

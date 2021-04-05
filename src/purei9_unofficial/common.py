@@ -24,3 +24,35 @@ RobotStates = {
     13: "Manual Steering",
     14: "Firmware Upgrade"
 }
+
+class AbstractRobot:
+    
+    def __init__(self):
+        pass
+    
+    def getid(self):
+        raise Exception("Not implemented")
+    
+    def getstatus(self):
+        raise Exception("Not implemented")
+    
+    def getfirmware(self):
+        raise Exception("Not implemented")
+    
+    def getname(self):
+        raise Exception("Not implemented")
+    
+    def startclean(self):
+        raise Exception("Not implemented")
+    
+    def gohome(self):
+        raise Exception("Not implemented")
+    
+    def getbattery(self):
+        raise Exception("Not implemented")
+    
+    def getlocalpw(self):
+        raise Exception("Not implemented")
+    
+    def isconnected(self):
+        raise Exception("Not implemented")
