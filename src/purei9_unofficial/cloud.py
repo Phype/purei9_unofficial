@@ -143,7 +143,6 @@ class CloudRobotv2:
 class CloudClientv2:
     
     def __init__(self, username, password):
-        password = CloudClient.chksum(password)
         
         self.client_id = "Wellbeing"
         self.client_secret = "vIpsOBEenIvjbawqL4HA29"
