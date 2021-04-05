@@ -4,17 +4,20 @@ import json
 import tabulate
 
 from .local import RobotClient, find_robots
-from .cloud import CloudClient
+from .cloud import CloudClient, CloudClientv2
 
 # import hexdump
 
 def usage():
     print("Usage: " + sys.argv[0] + " [cloud <email> <password>] [status]")
     print("       " + sys.argv[0] + " [cloud <email> <password>] maps <robotid> [write_files]")
+    print("       " + sys.argv[0] + " [cloudv2 <email> <password>] [status]")
+    print("       " + sys.argv[0] + " [cloudv2 <email> <password>] start <robotid>")
+    print("       " + sys.argv[0] + " [cloudv2 <email> <password>] home <robotid>")
     print("       " + sys.argv[0] + " [local <address> <localpw> [status|name|firmware|start|home]]")
     print("       " + sys.argv[0] + " [search]")
     print("")
-    print("    cloud: connect to purei9 cloud to get your localpw (does not work currently)")
+    print("    cloud: connect to purei9 cloud")
     print("")
     print("    local: connect to robot at <address> using <localpw>")
     print("           status   - show basic status")
@@ -26,6 +29,36 @@ def usage():
 
 if len(sys.argv) < 2:
     usage()
+    
+elif sys.argv[1] == "cloudv2":
+    cc = CloudClientv2(sys.argv[2], sys.argv[3])
+    
+    cmd = "status"
+    if len(sys.argv) > 4:
+        cmd = sys.argv[4]
+    
+    if cmd == "status":
+        
+        robots = cc.getRobots()
+        
+        tbl = []
+        tbl_hdr = ["Robot ID", "Name", "Localpw", "Connected", "Status", "Battery", "Firmware"]
+        
+        for robot in robots:
+            
+            tbl.append([robot.getid(), robot.getname(), "-", "-", robot.getstatus(), "-", "-"])
+        
+        print(tabulate.tabulate(tbl, headers=tbl_hdr, tablefmt="pretty"))
+    
+    if cmd == "start" or cmd == "home":
+        robotid = sys.argv[5]
+        
+        robot = cc.getRobot(robotid)
+        
+        if cmd == "start":
+            robot.startclean()
+        elif cmd == "home":
+            robot.gohome()
 
 elif sys.argv[1] == "cloud":
     cc = CloudClient(sys.argv[2], sys.argv[3])
@@ -43,7 +76,7 @@ elif sys.argv[1] == "cloud":
         
         for robot in robots:
             
-            tbl.append([robot.id, robot.name, robot.local_pw, robot.is_connected, robot.robot_status, robot.battery_status, robot.firmware])
+            tbl.append([robot.getid(), robot.getname(), robot.local_pw, robot.is_connected, robot.getstatus(), robot.battery_status, robot.firmware])
         
         print(tabulate.tabulate(tbl, headers=tbl_hdr, tablefmt="pretty"))
         

@@ -1,10 +1,13 @@
 import base64
 import hashlib
+import json
 
 from typing import List
 
 import requests
 import requests.auth
+
+from .util import log
 
 ROBOT_STATES = {
     1: "Cleaning",
@@ -45,8 +48,24 @@ class CloudRobot:
             self.battery_status = None
             self.local_pw       = None
         
-    def getStatus(self):
+    def getstatus(self):
         return ROBOT_STATES[self.robot_status]
+    
+    def startclean(self):
+        raise Exception("Not implemented")
+    
+    def gohome(self):
+        raise Exception("Not implemented")
+        
+    def getid(self) -> str():
+        """Get the robot's id"""
+        return self.id
+    
+    def getname(self) -> str:
+        """Get the robot's name"""
+        return self.name
+    
+    ###
     
     def getlocalpw(self):
         return self.local_pw
@@ -76,7 +95,9 @@ class CloudClient:
     def getRobots(self) -> List[CloudRobot]:
         """Get all robots linked to the cloud account"""
         
-        r = requests.post(self.apiurl + "/accounts/ConnectToAccount", json=self.credentials)
+        url = self.apiurl + "/accounts/ConnectToAccount"
+        log("<", url)
+        r = requests.post(url, json=self.credentials)
         try:
             return list(map(lambda r: CloudRobot(self, r["RobotID"], r), r.json()["RobotList"]))
         except:
@@ -119,20 +140,82 @@ class CloudRobotv2:
     def __init__(self, cloudclient, id):
         self.cloudclient = cloudclient
         self.id          = id
+        self._info       = None
         
-    def getStatus(self):
         
-        r = requests.get(self.cloudclient.apiurl + "/Appliances/" + self.id, headers=self.cloudclient.headers)
+    def _getinfo(self):
+        
+        if self._info == None:
+            url = self.cloudclient.apiurl + "/Appliances/" + self.id
+            log("<", url)
+            r = requests.get(url, headers=self.cloudclient.headers)
+            r.raise_for_status()
+            self._info = r.json()["twin"]
+            
+            log(">", json.dumps(self._info, indent=2))
+            
+        return self._info
+    
+    def _getall(self):
+        url = self.cloudclient.apiurl + "/Domains/Appliances/" + self.id
+        log("<", url)
+        r = requests.get(url, headers=self.cloudclient.headers)
         r.raise_for_status()
+        log(">", json.dumps(r.json(), indent=2))
         
-        status = r.json()["twin"]["properties"]["reported"]["robotStatus"]
+        url = self.cloudclient.apiurl + "/Domains/Appliances/" + self.id + "/Certificate"
+        log("<", url)
+        r = requests.get(url, headers=self.cloudclient.headers)
+        r.raise_for_status()
+        log(">", json.dumps(r.json(), indent=2))
+        
+        url = self.cloudclient.apiurl + "/Hashes/Appliances/" + self.id
+        log("<", url)
+        r = requests.get(url, headers=self.cloudclient.headers)
+        r.raise_for_status()
+        log(">", json.dumps(r.json(), indent=2))
+        
+        #url = self.cloudclient.apiurl + "/oaq/appliances/" + self.id
+        #log("<", url)
+        #r = requests.get(url, headers=self.cloudclient.headers)
+        #r.raise_for_status()
+        #log(">", json.dumps(r.json(), indent=2))
+        
+        #url = self.cloudclient.apiurl + "/geo/appliances/" + self.id
+        #log("<", url)
+        #r = requests.get(url, headers=self.cloudclient.headers)
+        #r.raise_for_status()
+        #log(">", json.dumps(r.json(), indent=2))
+        
+        url = self.cloudclient.apiurl + "/robots/" + self.id + "/LifeTime"
+        log("<", url)
+        r = requests.get(url, headers=self.cloudclient.headers)
+        r.raise_for_status()
+        log(">", json.dumps(r.json(), indent=2))
+        
+        
+        
+    ###
+        
+    def getstatus(self):
+        status = self._getinfo()["properties"]["reported"]["robotStatus"]
         return ROBOT_STATES[status]
     
-    def clean(self):
+    def startclean(self):
         self._sendCleanCommand("play")
     
-    def home(self):
+    def gohome(self):
         self._sendCleanCommand("home")
+        
+    def getid(self) -> str():
+        """Get the robot's id"""
+        return self.id
+    
+    def getname(self) -> str:
+        """Get the robot's name"""
+        return self._getinfo()["properties"]["reported"]["applianceName"]
+        
+    ###
     
     def _sendCleanCommand(self, command):
         # play|stop|home
@@ -155,19 +238,27 @@ class CloudClientv2:
         
     def getToken(self):
         #TOKEN=$(curl -v https://api.delta.electrolux.com/api/Clients/Wellbeing -X POST --header "Content-Type: application/json" --data '{"ClientSecret":"vIpsOBEenIvjbawqL4HA29"}' --http1.1 | jq .accessToken -r )
-        r = requests.post(self.apiurl + "/Clients/" + self.client_id, json={"ClientSecret":self.client_secret}, headers=self.headers)
+        url = self.apiurl + "/Clients/" + self.client_id
+        log("<", url)
+        r = requests.post(url, json={"ClientSecret":self.client_secret}, headers=self.headers)
         r.raise_for_status()
         token = r.json()["accessToken"]
         self.headers = {"Authorization": "Bearer " + token}
         
     def login(self, username, password):
         #TOKEN2=$(curl -v https://api.delta.electrolux.com/api/Users/Login -X POST --header "Content-Type: application/json" --header "Authorization: Bearer $TOKEN" --data "{\"Username\":\"$MAIL\",\"Password\":\"$PASS\"}" --http1.1 | jq .accessToken -r )
-        
-        r = requests.post(self.apiurl + "/Users/Login", json={"Username":username, "Password": password}, headers=self.headers)
+        url = self.apiurl + "/Users/Login"
+        log("<", url)
+        r = requests.post(url, json={"Username":username, "Password": password}, headers=self.headers)
         r.raise_for_status()
         
         token = r.json()["accessToken"]
         self.headers = {"Authorization": "Bearer " + token}
+        
+    def getRobot(self, id):
+        for r in self.getRobots():
+            if r.getid() == id:
+                return r
         
     def getRobots(self):
         #curl -v https://api.delta.electrolux.com/api/Domains/Appliances -X GET --header "Content-Type: application/json" --header "Authorization: Bearer $TOKEN2" --http1.1 | jq -C
