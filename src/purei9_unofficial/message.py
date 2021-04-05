@@ -21,6 +21,7 @@ class BinaryMessage:
     MSG_GETSETTINGS  = 1023
     MSG_STARTCLEAN   = 1014
     MSG_GETSTATUS    = 1012
+    MSG_GET_BATTERY_STATUS_REQUEST = 1016 #  -984
     
     def __init__(self, major = 1, minor = 0, user1 = 0, user2 = 0, payload = b""):
         self.magic = BinaryMessage.MAGIC

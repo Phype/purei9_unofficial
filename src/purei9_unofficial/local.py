@@ -9,6 +9,8 @@ from typing import List
 from .util import log
 from .message import BinaryMessage
 
+from .common import RobotStates, BatteryStatus
+
 class RobotClient:
     
     CLEAN_PLAY  = 1
@@ -26,23 +28,6 @@ class RobotClient:
     STATE_RETURNPITSTOP       = 7
     STATE_PAUSEDRETURNPITSTOP = 8
     
-    STATES = {
-        1: "Cleaning",
-        2: "Paused Cleaning",
-        3: "Spot Cleaning",
-        4: "Paused Spot Cleaning",
-        5: "Return",
-        6: "Paused Return",
-        7: "Return for Pitstop",
-        8: "Paused Return for Pitstop",
-        9: "Charging",
-        10: "Sleeping",
-        11: "Error",
-        12: "Pitstop",
-        13: "Manual Steering",
-        14: "Firmware Upgrade"
-    }
-    
     PROTOCOL_VERSION = 2016100701 # 2019041001
     
     def __init__(self, addr : str):
@@ -56,7 +41,7 @@ class RobotClient:
     def getstatus(self) -> str:
         """Get the current state of the robot"""
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GETSTATUS))
-        return RobotClient.STATES[pkt.user1]
+        return RobotStates[pkt.user1]
     
     def startclean(self) -> None:
         """Tell the Robot to start cleaning"""
@@ -74,6 +59,16 @@ class RobotClient:
         """Get the robot's name"""
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GETNAME))
         return pkt.parsed
+    
+    def getfirmware(self) -> dict:
+        """Get robot's firmware properties"""
+        pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GETFIRMWARE))
+        return pkt.parsed["FirmwareVersion"]
+    
+    def getbattery(self) -> dict:
+        """Get the current robot settings"""
+        pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GET_BATTERY_STATUS_REQUEST))
+        return BatteryStatus[pkt.user1]
     
     ###
     
@@ -147,11 +142,6 @@ class RobotClient:
     
     def disconnect(self) -> None:
         self.stream.close()
-    
-    def getfirmware(self) -> dict:
-        """Get robot's firmware properties"""
-        pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GETFIRMWARE))
-        return pkt.parsed
     
     def getsettings(self) -> dict:
         """Get the current robot settings"""

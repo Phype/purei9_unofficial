@@ -112,9 +112,13 @@ elif sys.argv[1] == "cloud":
         print("Error: Unknown cmd " + cmd)
 
 elif sys.argv[1] == "local":
-    rc = RobotClient(sys.argv[2])
+    
+    address = sys.argv[2]
+    localpw = sys.argv[3]
+    
+    rc = RobotClient(address)
 
-    if rc.connect(sys.argv[3]):
+    if rc.connect(localpw):
         
         if len(sys.argv) > 4:
             action = sys.argv[4]
@@ -131,7 +135,12 @@ elif sys.argv[1] == "local":
             print(json.dumps(rc.getfirmware(), indent=2))
             
         elif action == "status":
-            print(rc.getstatus())
+            
+            tbl = []
+            tbl_hdr = ["Robot ID", "Name", "Localpw", "Connected", "Status", "Battery", "Firmware"]
+            tbl.append([rc.getid(), rc.getname(), localpw, "-", rc.getstatus(), rc.getbattery(), rc.getfirmware()])
+            
+            print(tabulate.tabulate(tbl, headers=tbl_hdr, tablefmt="pretty"))
             
         elif action == "name":
             print(rc.getname())
