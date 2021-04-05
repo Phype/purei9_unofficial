@@ -66,6 +66,40 @@ class CloudRobot(AbstractRobot):
     def isconnected(self) -> bool:
         return self.is_connected
     
+    def startclean(self):
+        
+        headers = self.cloudclient.credentials.copy()
+        headers["RobotId"] = self.id
+        
+        ws = websocket.WebSocket()
+        ws.connect("wss://mobile.rvccloud.electrolux.com/api/v1/websocket/AppUser", header = headers)
+        ws.send(json.dumps({
+            "Type": 1, # 1 Requst, 2 Response, 3 Event
+            "Command": "AppUpdate",
+            "Body": {
+                "CleaningCommand": 1,
+            }
+        }))
+        ws.recv()
+        ws.close()
+    
+    def gohome(self):
+        
+        headers = self.cloudclient.credentials.copy()
+        headers["RobotId"] = self.id
+        
+        ws = websocket.WebSocket()
+        ws.connect("wss://mobile.rvccloud.electrolux.com/api/v1/websocket/AppUser", header = headers)
+        ws.send(json.dumps({
+            "Type": 1, # 1 Requst, 2 Response, 3 Event
+            "Command": "AppUpdate",
+            "Body": {
+                "CleaningCommand": 3,
+            }
+        }))
+        ws.recv()
+        ws.close()
+    
     ###
     
     def getlocalpw(self):
@@ -232,6 +266,9 @@ class CloudClientv2:
         
         self.client_id     = "Wellbeing"
         self.client_secret = "vIpsOBEenIvjbawqL4HA29"
+        
+        # self.client_id     = "OsirisElux" # "OsirisAEG" # "OsirisChina"
+        # self.client_secret = "5nK3!rGWCN3Jrjkmz"
         
         self.apiurl  = "https://api.delta.electrolux.com/api"
         self.headers = {}

@@ -9,7 +9,7 @@ from typing import List
 from .util import log
 from .message import BinaryMessage
 
-from .common import AbstractRobot, RobotStates, BatteryStatus
+from .common import AbstractRobot, RobotStates, BatteryStatus, PowerModes
 
 class RobotClient(AbstractRobot):
     
@@ -28,7 +28,9 @@ class RobotClient(AbstractRobot):
     STATE_RETURNPITSTOP       = 7
     STATE_PAUSEDRETURNPITSTOP = 8
     
-    PROTOCOL_VERSION = 2016100701 # 2019041001
+    # PROTOCOL_VERSION = 2016062801
+    PROTOCOL_VERSION = 2016100701
+    # PROTOCOL_VERSION = 2019041001
     
     def __init__(self, addr : str):
         self.port     = 3002
@@ -75,6 +77,37 @@ class RobotClient(AbstractRobot):
     
     ###
     
+    def getwifinetworks(self) -> List[str]:
+        pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GET_NETWORKS_LIST))
+        networks = []
+        for key in pkt.parsed:
+            networks.append(pkt.parsed[key].decode("utf-8"))
+        return networks
+    
+    def getcapabilities(self) -> dict:
+        pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GET_CAPABILITIES_REQUEST))
+        return json.loads(pkt.parsed)
+    
+    def getpowermode(self) -> dict:
+        pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GET_POWER_MODE_REQUEST))
+        return PowerModes[pkt.user1]
+    
+    def getsettings(self) -> dict:
+        pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GETSETTINGS))
+        data = json.loads(pkt.parsed)
+        return data
+    
+    def getmessages(self) -> list:
+        pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GET_MESSAGE_LIST_REQUEST))
+        data = json.loads(pkt.parsed)
+        return data["Messages"]
+    
+    def setlocalpw(self, pw):
+        pkt = self.sendrecv(BinaryMessage.Text(BinaryMessage.SET_LOCAL_ROBOT_PASSWORD_REQUEST, pw))
+        return
+    
+    ###
+    
     def send(self, pkt : BinaryMessage): # minor, data=None, user1=0, user2=0):
         
         if type(pkt) != BinaryMessage:
@@ -92,8 +125,6 @@ class RobotClient(AbstractRobot):
     def sendrecv(self, pkt : BinaryMessage) -> BinaryMessage:
         self.send(pkt)
         return self.recv()
-    
-    ###
     
     def connect(self, localpw : str) -> bool:
         """
@@ -131,13 +162,14 @@ class RobotClient(AbstractRobot):
         
         pkt = self.sendrecv(BinaryMessage.Text(BinaryMessage.MSG_LOGIN, localpw))
         
-        # weird protocol: login response does not indicate sucess, connection will just
-        #                 be closed afterwards ...
+        if not(pkt.user1 == 1):
+            log("i", "Bad password.")
+            return False
         
         try:
             pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_PING))
         except:
-            log("!", "Exception after login. This normally indicates a bad localpw.")
+            log("i", "Exception after login.")
             return False
         
         log("i", "Connection Still alive, seems we are authenticated")
@@ -145,12 +177,6 @@ class RobotClient(AbstractRobot):
     
     def disconnect(self) -> None:
         self.stream.close()
-    
-    def getsettings(self) -> dict:
-        """Get the current robot settings"""
-        pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GETSETTINGS))
-        data = json.loads(pkt.parsed)
-        return data
 
 class FoundRobot:
     

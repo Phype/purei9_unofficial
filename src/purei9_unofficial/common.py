@@ -25,6 +25,12 @@ RobotStates = {
     14: "Firmware Upgrade"
 }
 
+PowerModes = {
+    1: "Low",
+    2: "Medium",
+    3: "High",
+}
+
 class AbstractRobot:
     
     def __init__(self):

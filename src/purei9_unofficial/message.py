@@ -15,6 +15,7 @@ class BinaryMessage:
     MSG_LOGIN        = 3005
     MSG_PING         = 1000
     MSG_GET_ADDRESS_REQUEST = 1002
+    MSG_GET_NETWORKS_LIST = 1003
     MSG_GET_ADDRESS_RESPONSE = 4001
     MSG_GETNAME      = 1011
     MSG_GETFIRMWARE  = 1010
@@ -22,6 +23,10 @@ class BinaryMessage:
     MSG_STARTCLEAN   = 1014
     MSG_GETSTATUS    = 1012
     MSG_GET_BATTERY_STATUS_REQUEST = 1016 #  -984
+    MSG_GET_CAPABILITIES_REQUEST = 1031
+    MSG_GET_POWER_MODE_REQUEST = 1027
+    MSG_GET_MESSAGE_LIST_REQUEST = 1020
+    SET_LOCAL_ROBOT_PASSWORD_REQUEST = 3004
     
     def __init__(self, major = 1, minor = 0, user1 = 0, user2 = 0, payload = b""):
         self.magic = BinaryMessage.MAGIC
@@ -50,14 +55,14 @@ class BinaryMessage:
         hdr = stream.read(24)
         
         if not(len(hdr) == 24):
-            raise Exception("Read too short")
+            raise Exception("Read too short (" + str(len(hdr)) + ")")
         
         magic, major, minor, user1, user2, length = struct.unpack("<IIIIII", hdr)
         
         body = stream.read(length)
         
         if not(len(body) == length):
-            raise Exception("Read too short")
+            raise Exception("Read too short (" + str(len(body)) + ")")
         
         return BinaryMessage.from_wire(hdr + body)
     
@@ -85,6 +90,38 @@ class BinaryMessage:
         
         elif self.major == BinaryMessage.MAJOR_TEXT:
             self.parsed = self.payload.decode("utf-8")
+            pass
+        
+        elif self.major == BinaryMessage.MAJOR_BLOB:
+            self.parsed = self.payload
+        
+        elif self.major == BinaryMessage.MAJOR_BLOBMAP:
+            
+            data = self.payload
+            obj  = {}
+            
+            while True:
+                
+                if len(data) == 0:
+                    break
+                
+                if len(data) < 4:
+                    raise Exception("Packet length mismatch")
+                
+                length  = struct.unpack("<I", data[:4])[0]
+                key     = data[4:4+length]
+                data    = data[4+length:]
+                
+                if len(data) < 4:
+                    raise Exception("Packet length mismatch")
+                
+                length = struct.unpack("<I", data[:4])[0]
+                value  = data[4:4+length]
+                data   = data[4+length:]
+                
+                obj[key.decode("utf-8")] = value
+        
+            self.parsed = obj
         
         elif self.major == BinaryMessage.MAJOR_STRINGMAP:
             
