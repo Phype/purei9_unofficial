@@ -36,7 +36,7 @@ Usage
 
 First you need to get your local robot pw to talk to the robot.
 
-	$ python -m purei9_unofficial cloud user@email.com mypassword
+	$ python -m purei9_unofficial cloud -c user@email.com:mypassword status
 	[
 		{
 			"RobotID": "900395798357985798375972",
@@ -50,7 +50,7 @@ First you need to get your local robot pw to talk to the robot.
 	
 You can also use the tool to locate any robots in the network
 
-	$ python -m purei9_unofficial search
+	$ python -m purei9_unofficial local find
 	+---------------+--------------------------+---------+
 	|   Address     |         RobotID          |  Name   |
 	+---------------+--------------------------+---------+
@@ -59,7 +59,7 @@ You can also use the tool to locate any robots in the network
 	
 Now you can connect to your robot.
 
-	$ python -m purei9_unofficial local 192.168.1.101 29379204 status
+	$ python -m purei9_unofficial local -a 192.168.1.101 -l 29379204 status
 	
 	 [<] Connecting to 192.168.1.101:3002
 	 [>] Connnected
@@ -82,20 +82,64 @@ Now you can connect to your robot.
 
 More usage:
 
-	Usage: purei9_unofficial [cloud <email> <password>] [status]
-	       purei9_unofficial [cloud <email> <password>] maps <robotid> [write_files]
-	       purei9_unofficial [local <address> <localpw> [status|firmware|start|home]]
-	       purei9_unofficial [search]
+    usage: purei9_unofficial [-h] [-d] [-o {table,json}] {cloud,local} ...
 
-	    cloud: connect to purei9 cloud to get your localpw (does not work currently)
+    positional arguments:
+    {cloud,local}         command
+        cloud               Connect to electrolux purei9 cloud (old API).
+        local               Connect to robot(s) via local network.
 
-	    local: connect to robot at <address> using <localpw>
-		   status   - show basic status
-		   firmware - show firmware info
-		   start    - start cleaning
-		   home     - stop cleaning and go home
+    optional arguments:
+    -h, --help            show this help message and exit
+    -d, --debug           enable debug logging
+    -o {table,json}, --output {table,json}
+                            output format
+                            
 
-	    search: search for robots in the local network
+    usage: purei9_unofficial cloud [-h] [-v {1,2}] (-c CREDENTIALS | -t TOKEN) {status,start,home,maps} ...
+
+    positional arguments:
+    {status,start,home,maps}
+                            subcommand, default=status
+        status              Get status of all robots.
+        start               Tell a robot to start cleaning.
+        home                Tell a robot to go home.
+        maps                Download maps (experimental).
+
+    optional arguments:
+    -h, --help            show this help message and exit
+    -v {1,2}, --apiversion {1,2}
+                            Cloud API version, v1=purei9, v2=wellbeing
+
+    Credentials:
+    One of these is required.
+
+    -c CREDENTIALS, --credentials CREDENTIALS
+                            elecrolux cloud credentails in username:password format
+    -t TOKEN, --token TOKEN
+                            electrolux v2 API token
+
+                            
+    purei9_unofficial local [-h] [-a ADDRESS] [-l LOCALPW] {find,status,start,home} ...
+
+    positional arguments:
+    {find,status,start,home}
+                            subcommand, default=find
+        find                Find all robots in the local subnet.
+        status              Get status of the robot.
+        start               Tell the robot to start cleaning.
+        home                Tell the robot to go home.
+
+    optional arguments:
+    -h, --help            show this help message and exit
+
+    Credentials:
+    Required for all commands except "find".
+
+    -a ADDRESS, --address ADDRESS
+                            robot ip address
+    -l LOCALPW, --localpw LOCALPW
+                            robot localpw (get via "cloud -v1 status")
 
 Library usage
 -------------

@@ -4,6 +4,7 @@ import json
 
 from typing import List
 
+import websocket
 import requests
 import requests.auth
 
@@ -13,7 +14,7 @@ from .common import AbstractRobot, RobotStates, BatteryStatus
 def do_http(method, url, retries=2, **kwargs):
     try:
         log("<", url)
-        r = requests.request(method, url, timeout=2, **kwargs)
+        r = requests.request(method, url, timeout=10, **kwargs)
         r.raise_for_status()
         log(">", r.text)
         return r
@@ -82,6 +83,8 @@ class CloudRobot(AbstractRobot):
         }))
         ws.recv()
         ws.close()
+        
+        return True
     
     def gohome(self):
         
@@ -99,11 +102,13 @@ class CloudRobot(AbstractRobot):
         }))
         ws.recv()
         ws.close()
-    
-    ###
+        
+        return True
     
     def getlocalpw(self):
         return self.local_pw
+    
+    ###
         
     def getMaps(self):
         r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.id + "/interactivemaps", auth=self.cloudclient.httpauth)
@@ -229,9 +234,11 @@ class CloudRobotv2(AbstractRobot):
     
     def startclean(self):
         self._sendCleanCommand("play")
+        return True
     
     def gohome(self):
         self._sendCleanCommand("home")
+        return True
         
     def getid(self) -> str():
         """Get the robot's id"""
@@ -252,6 +259,9 @@ class CloudRobotv2(AbstractRobot):
     
     def isconnected(self) -> bool:
         return self._getinfo()["connectionState"] == "Connected"
+    
+    def getlocalpw(self):
+        return None
         
     ###
     
@@ -262,7 +272,7 @@ class CloudRobotv2(AbstractRobot):
 
 class CloudClientv2:
     
-    def __init__(self, username, password):
+    def __init__(self, username=None, password=None, token=None):
         
         self.client_id     = "Wellbeing"
         self.client_secret = "vIpsOBEenIvjbawqL4HA29"
@@ -275,7 +285,7 @@ class CloudClientv2:
         
         self.username = username
         self.password = password
-        self.token    = None
+        self.token    = token
         
     def gettoken(self):
         return self.token

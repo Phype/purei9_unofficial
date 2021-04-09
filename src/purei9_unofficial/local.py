@@ -28,15 +28,12 @@ class RobotClient(AbstractRobot):
     STATE_RETURNPITSTOP       = 7
     STATE_PAUSEDRETURNPITSTOP = 8
     
-    # PROTOCOL_VERSION = 2016062801
-    PROTOCOL_VERSION = 2016100701
-    # PROTOCOL_VERSION = 2019041001
-    
     def __init__(self, addr : str):
         self.port     = 3002
         self.addr     = addr
         self.robot_id = None
         self.stream   = None
+        self.protocol_version = None
         
     ###
     
@@ -48,10 +45,12 @@ class RobotClient(AbstractRobot):
     def startclean(self) -> None:
         """Tell the Robot to start cleaning"""
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_STARTCLEAN, user1=RobotClient.CLEAN_PLAY))
+        return True
         
     def gohome(self) -> None:
         """Tell the Robot to go home"""
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_STARTCLEAN, user1=RobotClient.CLEAN_HOME))
+        return True
         
     def getid(self) -> str():
         """Get the robot's id"""
@@ -126,7 +125,21 @@ class RobotClient(AbstractRobot):
         self.send(pkt)
         return self.recv()
     
-    def connect(self, localpw : str) -> bool:
+    def connect(self, localpw):
+    
+        # versions = [2019041001, 2016100701, 2016062801]
+        success, other_version = self._connect(localpw, 2016100701)
+        
+        if not(success):
+            log("i", "Protocol version mismatch, retrying with version " + str(other_version))
+            success, other_version = self._connect(localpw, other_version)
+            
+        if success:
+            return True
+        else:
+            raise Exception("Protocol version mismatch")
+    
+    def _connect(self, localpw, version):
         """
         Connect to the robot
 
@@ -137,7 +150,7 @@ class RobotClient(AbstractRobot):
                 success (bool): Whether the connection was successful
         """
         
-        log("<", "Connecting to " + self.addr + ":" + str(self.port))
+        log("<", "Connecting to " + self.addr + ":" + str(self.port) + " version=" + str(version))
         tcp_socket = socket.create_connection((self.addr, self.port))
         
         ctx = ssl.create_default_context()
@@ -152,10 +165,11 @@ class RobotClient(AbstractRobot):
         tls_sock.do_handshake()
         self.stream = tls_sock.makefile("rwb")
         
-        pkt = self.sendrecv(BinaryMessage.Text(BinaryMessage.MSG_HELLO, "purei9-cli", RobotClient.PROTOCOL_VERSION))
+        pkt = self.sendrecv(BinaryMessage.Text(BinaryMessage.MSG_HELLO, "purei9-cli", version))
         
-        if not(pkt.user1 == RobotClient.PROTOCOL_VERSION):
-            raise Exception("Protocol version mismatch")
+        if not(pkt.user1 == version):
+            return False, pkt.user1
+            # raise Exception("Protocol version mismatch (" + str(pkt.user1) + " != " + str(version) + ")")
         
         self.robot_id = pkt.parsed
         log("i", "Hello from Robot ID: " + self.robot_id)
@@ -163,17 +177,12 @@ class RobotClient(AbstractRobot):
         pkt = self.sendrecv(BinaryMessage.Text(BinaryMessage.MSG_LOGIN, localpw))
         
         if not(pkt.user1 == 1):
-            log("i", "Bad password.")
-            return False
+            raise Exception("Bad localpw.")
         
-        try:
-            pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_PING))
-        except:
-            log("i", "Exception after login.")
-            return False
+        pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_PING))
         
         log("i", "Connection Still alive, seems we are authenticated")
-        return True
+        return True, version
     
     def disconnect(self) -> None:
         self.stream.close()

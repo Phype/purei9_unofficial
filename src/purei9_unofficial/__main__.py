@@ -1,5 +1,7 @@
 import sys
 import json
+import argparse
+
 
 import tabulate
 
@@ -8,171 +10,148 @@ from .util import setDebug
 from .local import RobotClient, find_robots
 from .cloud import CloudClient, CloudClientv2
 
-# import hexdump
 
-def usage():
-    print("Usage: " + sys.argv[0] + " [cloud <email> <password>] [status]")
-    print("       " + sys.argv[0] + " [cloud <email> <password>] maps <robotid> [write_files]")
-    print("       " + sys.argv[0] + " [cloudv2 <email> <password>] [status]")
-    print("       " + sys.argv[0] + " [cloudv2 <email> <password>] start <robotid>")
-    print("       " + sys.argv[0] + " [cloudv2 <email> <password>] home <robotid>")
-    print("       " + sys.argv[0] + " [local <address> <localpw> [status|name|firmware|start|home]]")
-    print("       " + sys.argv[0] + " [search]")
-    print("")
-    print("    cloud: connect to purei9 cloud")
-    print("")
-    print("    local: connect to robot at <address> using <localpw>")
-    print("           status   - show basic status")
-    print("           firmware - show firmware info")
-    print("           start    - start cleaning")
-    print("           home     - stop cleaning and go home")
-    print("")
-    print("    search: search for robots in the local network")
+# create the top-level parser
+args_main = argparse.ArgumentParser(prog=sys.argv[0])
+args_main.add_argument("-d", '--debug', action='store_true', help='enable debug logging')
+args_main.add_argument("-o", '--output', type=str, help='output format', choices=["table", "json"], default="table")
+cmds_main = args_main.add_subparsers(help='command', dest="command")
 
-if len(sys.argv) < 2:
-    usage()
-    
-elif sys.argv[1] == "cloudv2":
-    cc = CloudClientv2(sys.argv[2], sys.argv[3])
-    
-    cmd = "status"
-    if len(sys.argv) > 4:
-        cmd = sys.argv[4]
-    
-    if cmd == "status":
-        
-        robots = cc.getRobots()
-        
-        tbl = []
-        tbl_hdr = ["Robot ID", "Name", "Localpw", "Connected", "Status", "Battery", "Firmware"]
-        
-        for robot in robots:
-            
-            tbl.append([robot.getid(), robot.getname(), "-", robot.isconnected(), robot.getstatus(), robot.getbattery(), robot.getfirmware()])
-        
-        print(tabulate.tabulate(tbl, headers=tbl_hdr, tablefmt="pretty"))
-    
-    if cmd == "start" or cmd == "home":
-        robotid = sys.argv[5]
-        
-        robot = cc.getRobot(robotid)
-        
-        if cmd == "start":
-            robot.startclean()
-        elif cmd == "home":
-            robot.gohome()
+# cloud v1/v2
+args_cloud = cmds_main.add_parser('cloud', help='Connect to electrolux purei9 cloud (old API).')
 
-elif sys.argv[1] == "cloud":
-    cc = CloudClient(sys.argv[2], sys.argv[3])
-    cmd = "status"
+args_cloud.add_argument('-v', "--apiversion", type=int, help='Cloud API version, v1=purei9, v2=wellbeing', choices=[1,2], default=1)
+
+credentials_sub = args_cloud.add_argument_group("Credentials", "One of these is required.")
+credentials = credentials_sub.add_mutually_exclusive_group(required=True)
+credentials.add_argument('-c', "--credentials", type=str, help='elecrolux cloud credentails in username:password format')
+credentials.add_argument('-t', "--token", type=str, help='electrolux v2 API token')
+
+cmds_cloud = args_cloud.add_subparsers(help='subcommand, default=status', dest="subcommand")
+
+cmds_cloud_status = cmds_cloud.add_parser('status', help='Get status of all robots.')
+
+cmds_cloud_start = cmds_cloud.add_parser('start', help='Tell a robot to start cleaning.')
+cmds_cloud_start.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
+
+cmds_cloud_home = cmds_cloud.add_parser('home', help='Tell a robot to go home.')
+cmds_cloud_home.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
+
+cmds_cloud_maps = cmds_cloud.add_parser('maps', help='Download maps (experimental).')
+cmds_cloud_maps.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
+
+# local
+args_local = cmds_main.add_parser('local', help='Connect to robot(s) via local network.')
+
+credentials_local = args_local.add_argument_group("Credentials", 'Required for all commands except "find".')
+credentials_local.add_argument('-a', "--address", type=str, help='robot ip address')
+credentials_local.add_argument('-l', "--localpw", type=str, help='robot localpw (get via "cloud -v1 status")')
+
+cmds_local = args_local.add_subparsers(help='subcommand, default=find', dest="subcommand")
+
+cmds_local_find = cmds_local.add_parser('find', help='Find all robots in the local subnet.')
+
+cmds_local_find = cmds_local.add_parser('status', help='Get status of the robot.')
+cmds_local_start = cmds_local.add_parser('start', help='Tell the robot to start cleaning.')
+cmds_local_home = cmds_local.add_parser('home', help='Tell the robot to go home.')
+
+args = args_main.parse_args()
+
+OUTPUT = None
+
+def exiterror(s, parser):
+    parser.print_help()
+    print("\nError: " + s)
+    sys.exit(1)
+
+if args.debug:
+    setDebug(True)
+
+if args.command == "cloud":
+        
+    username = None
+    password = None
+    token    = args.token
     
-    if len(sys.argv) > 4:
-        cmd = sys.argv[4]
-    
-    if cmd == "status":
+    if args.credentials != None:
+        username, password = args.credentials.split(":")
         
-        robots = cc.getRobots()
+    client = None
         
-        tbl = []
-        tbl_hdr = ["Robot ID", "Name", "Localpw", "Connected", "Status", "Battery", "Firmware"]
+    if args.apiversion == 1:
+        if args.credentials == None:
+            exiterror("Cloud API v1 cannot use token.", args_cloud)
+        client = CloudClient(username, password)
+    elif args.apiversion == 2:
+        client = CloudClientv2(username=username, password=password, token=token)
         
-        for robot in robots:
-            
-            tbl.append([robot.getid(), robot.getname(), robot.getlocalpw(), robot.isconnected(), robot.getstatus(), robot.getbattery(), robot.getfirmware()])
+    if args.subcommand == "status":
+        OUTPUT = list(map(lambda rc: {
+                "id": rc.getid(),
+                "name": rc.getname(),
+                "localpw": rc.getlocalpw(),
+                "connected": rc.isconnected(),
+                "status": rc.getstatus(),
+                "battery": rc.getbattery(),
+                "firmware": rc.getfirmware(),
+            }, client.getRobots()))
         
-        print(tabulate.tabulate(tbl, headers=tbl_hdr, tablefmt="pretty"))
+    elif args.subcommand in ["start", "home", "maps"]:
+        if args.robotid == None:
+            exiterror("Requires robotid.", args_cloud)
         
-    elif cmd == "maps":
-        if len(sys.argv) > 5:
-            id = sys.argv[5]
-        else:
-            print("Requires argument: Robot ID")
-            sys.exit(0)
+        rc = client.getRobot(args.robotid)
         
-        write = False
-        if len(sys.argv) > 6:
-            write = True
+        if args.subcommand == "start":
+            OUTPUT = rc.startclean()
         
-        robot   = cc.getRobot(id)
+        if args.subcommand == "home":
+            OUTPUT = rc.gohome()
         
-        tbl     = []
-        tbl_hdr = ["Map ID", "Timestamp"]
-        
-        for m in robot.getMaps():
-            
-            m.get()
-            
-            tbl.append([m.id, m.info["Timestamp"]])
-            
-            if write:
-                with open(m.id + ".png", "wb") as fp:
-                    fp.write(m.image)
-                
-        print(tabulate.tabulate(tbl, headers=tbl_hdr, tablefmt="pretty"))
+        if args.subcommand == "maps":
+            OUTPUT = []
+            for map in rc.getMaps():
+                map.get()
+                OUTPUT.append(map.info)
         
     else:
-        print("Error: Unknown cmd " + cmd)
+        exiterror("Subcommand not specifed.", args_cloud)
 
-elif sys.argv[1] == "local":
-    
-    address = sys.argv[2]
-    localpw = sys.argv[3]
-    
-    rc = RobotClient(address)
-
-    if rc.connect(localpw):
-        
-        if len(sys.argv) > 4:
-            action = sys.argv[4]
+elif args.command == "local":
+    if args.subcommand == "find":
+        OUTPUT = list(map(lambda robot: {"address": robot.address, "id": robot.id, "name": robot.name}, find_robots()))
+    elif args.subcommand in ["status", "start", "home"]:
+        if args.address == None or args.localpw == None:
+            exiterror("Requires address and localpw.", args_local)
         else:
-            action = "status"
+            rc = RobotClient(args.address)
+            rc.connect(args.localpw)
             
-        if action == "start":
-            print(json.dumps(rc.startclean(), indent=2))
-            
-        elif action == "home":
-            print(json.dumps(rc.gohome(), indent=2))
-                
-        elif action == "firmware":
-            print(json.dumps(rc.getfirmware(), indent=2))
-            
-        elif action == "status":
-            
-            tbl = []
-            tbl_hdr = ["Robot ID", "Name", "Localpw", "Connected", "Status", "Battery", "Firmware"]
-            tbl.append([rc.getid(), rc.getname(), localpw, rc.isconnected(), rc.getstatus(), rc.getbattery(), rc.getfirmware()])
-            
-            print(tabulate.tabulate(tbl, headers=tbl_hdr, tablefmt="pretty"))
-            
-        elif action == "name":
-            print(rc.getname())
-        
-        else:
-            log("!", "Unknown action " + action)
-            print(json.dumps(None))
-        
-        # print("ID:       " + rc.robot_id)
-        # print("Name:     " + rc.getname())
-        # print("Status:   " + rc.getstatus())
-        # print("Settings: " + str(rc.getsettings()))
-        
-        # print(json.dumps(rc.getfirmware(), indent=2))
-        
+            if args.subcommand == "status":
+                OUTPUT = [{
+                    "id": rc.getid(),
+                    "name": rc.getname(),
+                    "localpw": args.localpw,
+                    "connected": rc.isconnected(),
+                    "status": rc.getstatus(),
+                    "battery": rc.getbattery(),
+                    "firmware": rc.getfirmware(),
+                }]
+            elif args.subcommand == "start":
+                OUTPUT = rc.startclean()
+            elif args.subcommand == "home":
+                OUTPUT = rc.gohome()
     else:
-        print(json.dumps(None))
-        
-
-elif sys.argv[1] == "search":
-    robots = find_robots()
-    
-    tbl_hdr = ["Address", "RobotID", "Name"]
-    tbl = []
-    
-    for robot in robots:
-        tbl.append([robot.address, robot.id, robot.name])
-    
-    print(tabulate.tabulate(tbl, headers=tbl_hdr, tablefmt="pretty"))
-    
-    
+        exiterror("Subcommand not specifed.", args_local)
 else:
-    usage()
+    exiterror("Command not specifed.", args_main)
+    
+if OUTPUT != None:
+    if args.output == "table":
+        if type(OUTPUT) != type([]):
+            OUTPUT = [[OUTPUT]]
+        print(tabulate.tabulate(OUTPUT, headers="keys", tablefmt="pretty"))
+    elif args.output == "json":
+        print(json.dumps(OUTPUT, indent=2))
+
+sys.exit(0)
