@@ -71,6 +71,9 @@ class CloudRobot(AbstractRobot):
     def isconnected(self) -> bool:
         return self._getinfo()["Connected"]
     
+    def getlocalpw(self):
+        return self._getinfo()["LocalRobotPassword"]
+    
     def startclean(self):
         
         headers = self.cloudclient.credentials.copy()
@@ -108,9 +111,6 @@ class CloudRobot(AbstractRobot):
         ws.close()
         
         return True
-    
-    def getlocalpw(self):
-        return self._getinfo()["LocalRobotPassword"]
     
     ###
         
@@ -276,25 +276,38 @@ class CloudClientv2:
         
         self.username = username
         self.password = password
-        self.token    = token
+        
+        self.token = None
+        self.settoken(token)
         
     def gettoken(self):
-        return self.token
+        return json.dumps(self.token)
     
     def settoken(self, token):
-        self.token = token
+        if token:
+            self.token = json.loads(token)
+            if not("expires" in self.token):
+                if "expiresIn" in self.token:
+                    self.token["expires"] = time.time() + self.token["expiresIn"] - 60
+                else:
+                    self.token["expires"] = time.time() + 60
+            
+        else:
+            self.token = None
         
     def _getHeaders(self):
         
-        if not(self.token):
+        if not(self.token) or time.time() > self.token["expires"]:
             
             r = do_http("POST", self.apiurl + "/Clients/" + self.client_id, json={"ClientSecret":self.client_secret})
-            self.token = r.json()["accessToken"]
+            self.settoken(r.text)
             
-            r = do_http("POST", self.apiurl + "/Users/Login", json={"Username":self.username, "Password": self.password}, headers={"Authorization": "Bearer " + self.token})
-            self.token = r.json()["accessToken"]
+            r = do_http("POST", self.apiurl + "/Users/Login", json={"Username":self.username, "Password": self.password}, headers={"Authorization": "Bearer " + self.token["accessToken"]})
+            self.settoken(r.text)
+            
+            log("i", "Token: " + self.gettoken())
         
-        return {"Authorization": "Bearer " + self.token}
+        return {"Authorization": "Bearer " + self.token["accessToken"]}
         
     def getRobot(self, id):
         for r in self.getRobots():
