@@ -69,7 +69,7 @@ class CloudRobot(AbstractRobot):
         return BatteryStatus[self._getinfo()["BatteryStatus"]]
     
     def isconnected(self) -> bool:
-        return self._getinfo()["LocalRobotPassword"]
+        return self._getinfo()["Connected"]
     
     def startclean(self):
         
@@ -110,7 +110,7 @@ class CloudRobot(AbstractRobot):
         return True
     
     def getlocalpw(self):
-        return self._getinfo()["Connected"]
+        return self._getinfo()["LocalRobotPassword"]
     
     ###
         
