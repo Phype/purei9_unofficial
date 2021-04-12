@@ -1,15 +1,12 @@
 import sys
+import logging
 
-DEBUG = False
-
-def setDebug(debug):
-    global DEBUG
-    DEBUG = debug
+LOGGER = logging.getLogger(__name__)
 
 def log(lvl, msg):
-    if not(DEBUG) and lvl != "!":
-        return
+    global LOGGER
     
-    sys.stderr.write(" [" + lvl + "] " + msg + "\n")
-    sys.stderr.flush()
-
+    if lvl in ["!"]:
+        LOGGER.error(lvl + " " + msg)
+    else:
+        LOGGER.debug(lvl + " " + msg)

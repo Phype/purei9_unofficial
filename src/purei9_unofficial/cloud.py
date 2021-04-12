@@ -17,7 +17,7 @@ def do_http(method, url, retries=2, **kwargs):
     try:
         log("<", method + " " + url)
         r = requests.request(method, url, timeout=10, **kwargs)
-        log(">", "HTTP " + str(r.status_code) + " " + str(r) + "\n     " + r.text)
+        log(">", "HTTP " + str(r.status_code) + " " + str(r) + " " + r.text)
         r.raise_for_status()
         return r
     except:

@@ -1,15 +1,19 @@
 import sys
 import json
 import argparse
-
+import logging
 
 import tabulate
-
-from .util import setDebug
 
 from .local import RobotClient, find_robots
 from .cloud import CloudClient, CloudClientv2
 
+# Setup logging
+root = logging.getLogger()
+root.setLevel(logging.DEBUG)
+handler = logging.StreamHandler(sys.stderr)
+handler.setLevel(logging.WARNING)
+root.addHandler(handler)
 
 # create the top-level parser
 args_main = argparse.ArgumentParser(prog=sys.argv[0])
@@ -65,7 +69,7 @@ def exiterror(s, parser):
     sys.exit(1)
 
 if args.debug:
-    setDebug(True)
+    handler.setLevel(logging.DEBUG)
 
 if args.command == "cloud":
         
