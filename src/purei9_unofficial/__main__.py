@@ -13,6 +13,7 @@ root = logging.getLogger()
 root.setLevel(logging.DEBUG)
 handler = logging.StreamHandler(sys.stderr)
 handler.setLevel(logging.WARNING)
+handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 root.addHandler(handler)
 
 # create the top-level parser

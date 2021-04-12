@@ -17,7 +17,15 @@ def do_http(method, url, retries=2, **kwargs):
     try:
         log("<", method + " " + url)
         r = requests.request(method, url, timeout=10, **kwargs)
-        log(">", "HTTP " + str(r.status_code) + " " + str(r) + " " + r.text)
+        
+        # Hide access tokens from log
+        if r.text:
+            if "accessToken" in r.text:
+                log(">", "HTTP " + str(r.status_code) + " " + str(r) + " " + "(sensitive data not shown)")
+            else:
+                log(">", "HTTP " + str(r.status_code) + " " + str(r) + " " + r.text)
+        else:
+            log(">", "HTTP " + str(r.status_code) + " " + str(r) + " " + "-")
         r.raise_for_status()
         return r
     except:
@@ -305,7 +313,8 @@ class CloudClientv2:
             r = do_http("POST", self.apiurl + "/Users/Login", json={"Username":self.username, "Password": self.password}, headers={"Authorization": "Bearer " + self.token["accessToken"]})
             self.settoken(r.text)
             
-            log("i", "Token: " + self.gettoken())
+            # Do not log because sensitive data
+            # log("i", "Token: " + self.gettoken())
         
         return {"Authorization": "Bearer " + self.token["accessToken"]}
         
