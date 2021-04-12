@@ -48,8 +48,15 @@ class RobotClient(AbstractRobot):
         return True
         
     def gohome(self) -> None:
-        """Tell the Robot to go home"""
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_STARTCLEAN, user1=RobotClient.CLEAN_HOME))
+        return True
+        
+    def pauseclean(self) -> None:
+        pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_STARTCLEAN, user1=RobotClient.CLEAN_PAUSE))
+        return True
+        
+    def stopclean(self) -> None:
+        pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_STARTCLEAN, user1=RobotClient.CLEAN_STOP))
         return True
         
     def getid(self) -> str():

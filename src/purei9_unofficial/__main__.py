@@ -42,6 +42,12 @@ cmds_cloud_start.add_argument("-r", "--robotid", type=str, help='ID of robot.', 
 cmds_cloud_home = cmds_cloud.add_parser('home', help='Tell a robot to go home.')
 cmds_cloud_home.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
 
+cmds_cloud_pause = cmds_cloud.add_parser('pause', help='Tell a robot to pause cleaning.')
+cmds_cloud_pause.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
+
+cmds_cloud_stop = cmds_cloud.add_parser('stop', help='Tell a robot to stop cleaning.')
+cmds_cloud_stop.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
+
 cmds_cloud_maps = cmds_cloud.add_parser('maps', help='Download maps (experimental).')
 cmds_cloud_maps.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
 
@@ -57,8 +63,10 @@ cmds_local = args_local.add_subparsers(help='subcommand, default=find', dest="su
 cmds_local_find = cmds_local.add_parser('find', help='Find all robots in the local subnet.')
 
 cmds_local_find = cmds_local.add_parser('status', help='Get status of the robot.')
-cmds_local_start = cmds_local.add_parser('start', help='Tell the robot to start cleaning.')
+cmds_local_start = cmds_local.add_parser('start', help='Tell the robot to start cleaning (note: toggles between play/pause).')
 cmds_local_home = cmds_local.add_parser('home', help='Tell the robot to go home.')
+cmds_local_pause = cmds_local.add_parser('pause', help='Tell the robot to pause cleaning (note: toggles between play/pause).')
+cmds_local_stop = cmds_local.add_parser('stop', help='Tell the robot to stop cleaning.')
 
 args = args_main.parse_args()
 
@@ -101,7 +109,7 @@ if args.command == "cloud":
                 "firmware": rc.getfirmware(),
             }, client.getRobots()))
         
-    elif args.subcommand in ["start", "home", "maps"]:
+    elif args.subcommand in ["start", "home", "pause", "stop", "maps"]:
         if args.robotid == None:
             exiterror("Requires robotid.", args_cloud)
         
@@ -112,6 +120,12 @@ if args.command == "cloud":
         
         if args.subcommand == "home":
             OUTPUT = rc.gohome()
+        
+        if args.subcommand == "pause":
+            OUTPUT = rc.pauseclean()
+        
+        if args.subcommand == "stop":
+            OUTPUT = rc.stopclean()
         
         if args.subcommand == "maps":
             OUTPUT = []
@@ -125,7 +139,7 @@ if args.command == "cloud":
 elif args.command == "local":
     if args.subcommand == "find":
         OUTPUT = list(map(lambda robot: {"address": robot.address, "id": robot.id, "name": robot.name}, find_robots()))
-    elif args.subcommand in ["status", "start", "home"]:
+    elif args.subcommand in ["status", "start", "pause", "stop", "home"]:
         if args.address == None or args.localpw == None:
             exiterror("Requires address and localpw.", args_local)
         else:
@@ -146,6 +160,10 @@ elif args.command == "local":
                 OUTPUT = rc.startclean()
             elif args.subcommand == "home":
                 OUTPUT = rc.gohome()
+            elif args.subcommand == "pause":
+                OUTPUT = rc.pauseclean()
+            elif args.subcommand == "stop":
+                OUTPUT = rc.stopclean()
     else:
         exiterror("Subcommand not specifed.", args_local)
 else:

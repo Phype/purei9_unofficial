@@ -83,25 +83,20 @@ class CloudRobot(AbstractRobot):
         return self._getinfo()["LocalRobotPassword"]
     
     def startclean(self):
-        
-        headers = self.cloudclient.credentials.copy()
-        headers["RobotId"] = self.id
-        
-        ws = websocket.WebSocket()
-        ws.connect("wss://mobile.rvccloud.electrolux.com/api/v1/websocket/AppUser", header = headers)
-        ws.send(json.dumps({
-            "Type": 1, # 1 Requst, 2 Response, 3 Event
-            "Command": "AppUpdate",
-            "Body": {
-                "CleaningCommand": 1,
-            }
-        }))
-        ws.recv()
-        ws.close()
-        
-        return True
+        return self._sendCleanCommand(1)
     
     def gohome(self):
+        return self._sendCleanCommand(3)
+    
+    def pauseclean(self):
+        return self._sendCleanCommand(4)
+    
+    def stopclean(self):
+        return self._sendCleanCommand(5)
+    
+    ###
+    
+    def _sendCleanCommand(self, command):
         
         headers = self.cloudclient.credentials.copy()
         headers["RobotId"] = self.id
@@ -112,15 +107,14 @@ class CloudRobot(AbstractRobot):
             "Type": 1, # 1 Requst, 2 Response, 3 Event
             "Command": "AppUpdate",
             "Body": {
-                "CleaningCommand": 3,
+                "CleaningCommand": command,
             }
         }))
         ws.recv()
         ws.close()
         
         return True
-    
-    ###
+        
         
     def getMaps(self):
         r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.id + "/interactivemaps", auth=self.cloudclient.httpauth)
@@ -237,6 +231,14 @@ class CloudRobotv2(AbstractRobot):
     
     def gohome(self):
         self._sendCleanCommand("home")
+        return True
+    
+    def pauseclean(self):
+        self._sendCleanCommand("pause")
+        return True
+    
+    def stopclean(self):
+        self._sendCleanCommand("stop")
         return True
         
     def getid(self) -> str():

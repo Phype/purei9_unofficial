@@ -49,9 +49,19 @@ class AbstractRobot:
         raise Exception("Not implemented")
     
     def startclean(self):
+        """Tell the Robot to start cleaning (note: this is a start/pause toggle)"""
+        raise Exception("Not implemented")
+    
+    def stopclean(self):
+        """Tell the Robot to stop cleaning"""
+        raise Exception("Not implemented")
+    
+    def pauseclean(self):
+        """Tell the Robot to pause cleaning (note: this is a start/pause toggle)"""
         raise Exception("Not implemented")
     
     def gohome(self):
+        """Tell the Robot to go home"""
         raise Exception("Not implemented")
     
     def getbattery(self):
