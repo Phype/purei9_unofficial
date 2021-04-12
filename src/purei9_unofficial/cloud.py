@@ -1,6 +1,8 @@
 import base64
 import hashlib
 import json
+import time
+import functools
 
 from typing import List
 
@@ -13,40 +15,42 @@ from .common import AbstractRobot, RobotStates, BatteryStatus
 
 def do_http(method, url, retries=2, **kwargs):
     try:
-        log("<", url)
+        log("<", method + " " + url)
         r = requests.request(method, url, timeout=10, **kwargs)
+        log(">", "HTTP " + str(r.status_code) + " " + str(r) + "\n     " + r.text)
         r.raise_for_status()
-        log(">", r.text)
         return r
     except:
-        log(">", "HTTP error")
         if retries > 0:
             return do_http(method, url, retries-1, **kwargs)
+        
+def cached_data(func, maxage=5):
+    @functools.wraps(func)
+    def self(*args, **kwargs):
+        if self.data != None and time.time() - self.date < self.maxage:
+            return self.data
+        else:
+            self.data = func(*args, **kwargs)
+            self.date = time.time()
+            return self.data
+    self.data = None
+    self.date = time.time()
+    self.maxage = maxage
+    return self
 
 class CloudRobot(AbstractRobot):
     
-    def __init__(self, cloudclient, id, info=None):
+    def __init__(self, cloudclient, id):
         self.cloudclient = cloudclient
         self.id          = id
-        self.info        = info
-        
-        if info:
-            self.name           = info["RobotName"]
-            self.is_connected   = info["Connected"]
-            self.firmware       = info["FirmwareVersion"]
-            self.robot_status   = info["RobotStatus"]
-            self.battery_status = info["BatteryStatus"]
-            self.local_pw       = info["LocalRobotPassword"]
-        else:
-            self.name           = None
-            self.is_connected   = None
-            self.firmware       = None
-            self.robot_status   = None
-            self.battery_status = None
-            self.local_pw       = None
+    
+    @cached_data
+    def _getinfo(self):
+        r = do_http("POST", self.cloudclient.apiurl + "/robots/AppUpdate", auth=self.cloudclient.httpauth, json={"RobotID": self.id, "Email": self.cloudclient.credentials["Email"], "AccountPassword": self.cloudclient.credentials["AccountPassword"]})
+        return r.json()
         
     def getstatus(self):
-        return RobotStates[self.robot_status]
+        return RobotStates[self._getinfo()["RobotStatus"]]
         
     def getid(self) -> str():
         """Get the robot's id"""
@@ -54,18 +58,18 @@ class CloudRobot(AbstractRobot):
     
     def getname(self) -> str:
         """Get the robot's name"""
-        return self.name
+        return self._getinfo()["RobotName"]
     
     def getfirmware(self) -> str:
         """Get robot's firmware version"""
-        return self.firmware
+        return self._getinfo()["FirmwareVersion"]
     
     def getbattery(self) -> str:
         """Get the current robot battery status"""
-        return BatteryStatus[self.battery_status]
+        return BatteryStatus[self._getinfo()["BatteryStatus"]]
     
     def isconnected(self) -> bool:
-        return self.is_connected
+        return self._getinfo()["LocalRobotPassword"]
     
     def startclean(self):
         
@@ -106,7 +110,7 @@ class CloudRobot(AbstractRobot):
         return True
     
     def getlocalpw(self):
-        return self.local_pw
+        return self._getinfo()["Connected"]
     
     ###
         
@@ -134,16 +138,8 @@ class CloudClient:
         
     def getRobots(self) -> List[CloudRobot]:
         """Get all robots linked to the cloud account"""
-        
         r = do_http("POST", self.apiurl + "/accounts/ConnectToAccount", json=self.credentials)
-        try:
-            return list(map(lambda r: CloudRobot(self, r["RobotID"], r), r.json()["RobotList"]))
-        except:
-            log("!", "Cannot login: " + str(r))
-            
-            for k in r.headers:
-                log("i", k + ": " + r.headers[k])
-            log("i", r.text)
+        return list(map(lambda r: CloudRobot(self, r["RobotID"]), r.json()["RobotList"]))
             
     def getRobot(self, id) -> CloudRobot:
         """Make a CloudRobot instance with a given id. id is not checked."""
@@ -178,16 +174,11 @@ class CloudRobotv2(AbstractRobot):
     def __init__(self, cloudclient, id):
         self.cloudclient = cloudclient
         self.id          = id
-        self._info       = None
-        
-        
+    
+    @cached_data
     def _getinfo(self):
-        
-        if self._info == None:
-            r = do_http("GET", self.cloudclient.apiurl + "/Appliances/" + self.id, headers=self.cloudclient._getHeaders())
-            self._info = r.json()["twin"]
-            
-        return self._info
+        r = do_http("GET", self.cloudclient.apiurl + "/Appliances/" + self.id, headers=self.cloudclient._getHeaders())
+        return r.json()["twin"]
     
     def _getall(self):
         r = do_http("GET", self.cloudclient.apiurl + "/Domains/Appliances/" + self.id, headers=self.cloudclient._getHeaders())
