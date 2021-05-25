@@ -63,6 +63,7 @@ cmds_local = args_local.add_subparsers(help='subcommand, default=find', dest="su
 cmds_local_find = cmds_local.add_parser('find', help='Find all robots in the local subnet.')
 
 cmds_local_find = cmds_local.add_parser('status', help='Get status of the robot.')
+cmds_local_wifi = cmds_local.add_parser('wifi', help='Get available wifi networks for the robot.')
 cmds_local_start = cmds_local.add_parser('start', help='Tell the robot to start cleaning (note: toggles between play/pause).')
 cmds_local_home = cmds_local.add_parser('home', help='Tell the robot to go home.')
 cmds_local_pause = cmds_local.add_parser('pause', help='Tell the robot to pause cleaning (note: toggles between play/pause).')
@@ -139,7 +140,7 @@ if args.command == "cloud":
 elif args.command == "local":
     if args.subcommand == "find":
         OUTPUT = list(map(lambda robot: {"address": robot.address, "id": robot.id, "name": robot.name}, find_robots()))
-    elif args.subcommand in ["status", "start", "pause", "stop", "home"]:
+    elif args.subcommand in ["status", "start", "pause", "stop", "home", "wifi"]:
         if args.address == None or args.localpw == None:
             exiterror("Requires address and localpw.", args_local)
         else:
@@ -164,6 +165,8 @@ elif args.command == "local":
                 OUTPUT = rc.pauseclean()
             elif args.subcommand == "stop":
                 OUTPUT = rc.stopclean()
+            elif args.subcommand == "wifi":
+                OUTPUT = list(map(lambda x: {"name": x}, rc.getwifinetworks()))
     else:
         exiterror("Subcommand not specifed.", args_local)
 else:
