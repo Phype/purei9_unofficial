@@ -3,8 +3,6 @@ import json
 import argparse
 import logging
 
-import tabulate
-
 from .local import RobotClient, find_robots
 from .cloud import CloudClient, CloudClientv2
 
@@ -15,6 +13,8 @@ handler = logging.StreamHandler(sys.stderr)
 handler.setLevel(logging.WARNING)
 handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 root.addHandler(handler)
+
+logger = logging.getLogger(__name__)
 
 # create the top-level parser
 args_main = argparse.ArgumentParser(prog=sys.argv[0])
@@ -170,11 +170,19 @@ else:
     exiterror("Command not specifed.", args_main)
     
 if OUTPUT != None:
+    
+    if args.output == "table":
+        try:
+            import tabulate
+        except:
+            logger.warn("Cannot use tabular output because missing \"tabulate\" package")
+            args.output = "json"
+    
     if args.output == "table":
         if type(OUTPUT) != type([]):
             OUTPUT = [[OUTPUT]]
         print(tabulate.tabulate(OUTPUT, headers="keys", tablefmt="pretty"))
-    elif args.output == "json":
+    if args.output == "json":
         print(json.dumps(OUTPUT, indent=2))
 
 sys.exit(0)

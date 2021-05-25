@@ -3,6 +3,7 @@ import hashlib
 import json
 import time
 import functools
+import logging
 
 from typing import List
 
@@ -10,27 +11,31 @@ import websocket
 import requests
 import requests.auth
 
-from .util import log
 from .common import AbstractRobot, RobotStates, BatteryStatus
+
+logger = logging.getLogger(__name__)
 
 def do_http(method, url, retries=2, **kwargs):
     try:
-        log("<", method + " " + url)
+        logger.debug("HTTP " + method + " " + url)
         r = requests.request(method, url, timeout=10, **kwargs)
         
         # Hide access tokens from log
         if r.text:
             if "accessToken" in r.text:
-                log(">", "HTTP " + str(r.status_code) + " " + str(r) + " " + "(sensitive data not shown)")
+                logger.debug("HTTP " + str(r.status_code) + " " + str(r) + " " + "(sensitive data not shown)")
             else:
-                log(">", "HTTP " + str(r.status_code) + " " + str(r) + " " + r.text)
+                logger.debug("HTTP " + str(r.status_code) + " " + str(r) + " " + r.text)
         else:
-            log(">", "HTTP " + str(r.status_code) + " " + str(r) + " " + "-")
+            logger.debug("HTTP " + str(r.status_code) + " " + str(r) + " " + "-")
         r.raise_for_status()
         return r
-    except:
+    except Exception as r:
         if retries > 0:
             return do_http(method, url, retries-1, **kwargs)
+        else:
+            logger.error("Giving up due to no left retries. Wrong credentials?")
+            raise r
         
 def cached_data(func, maxage=5):
     @functools.wraps(func)
@@ -314,9 +319,6 @@ class CloudClientv2:
             
             r = do_http("POST", self.apiurl + "/Users/Login", json={"Username":self.username, "Password": self.password}, headers={"Authorization": "Bearer " + self.token["accessToken"]})
             self.settoken(r.text)
-            
-            # Do not log because sensitive data
-            # log("i", "Token: " + self.gettoken())
         
         return {"Authorization": "Bearer " + self.token["accessToken"]}
         
