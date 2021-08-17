@@ -69,9 +69,7 @@ class RobotClient(AbstractRobot):
         return pkt.parsed
     
     def getfirmware(self) -> str:
-        """Get robot's firmware version"""
-        pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GETFIRMWARE))
-        return pkt.parsed["FirmwareVersion"]
+        return self.getfirmware_all()["FirmwareVersion"]
     
     def getbattery(self) -> str:
         """Get the current robot battery status"""
@@ -83,6 +81,11 @@ class RobotClient(AbstractRobot):
     
     ###
     
+    def getfirmware_all(self) -> dict:
+        """Get robot's firmware version"""
+        pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GETFIRMWARE))
+        return pkt.parsed
+    
     def getwifinetworks(self) -> List[str]:
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GET_NETWORKS_LIST))
         networks = []
@@ -92,7 +95,7 @@ class RobotClient(AbstractRobot):
     
     def getcapabilities(self) -> dict:
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GET_CAPABILITIES_REQUEST))
-        return json.loads(pkt.parsed)
+        return json.loads(pkt.parsed)["Capabilities"]
     
     def getpowermode(self) -> dict:
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GET_POWER_MODE_REQUEST))
@@ -107,6 +110,8 @@ class RobotClient(AbstractRobot):
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GET_MESSAGE_LIST_REQUEST))
         data = json.loads(pkt.parsed)
         return data["Messages"]
+    
+    ###
     
     def setlocalpw(self, pw):
         pkt = self.sendrecv(BinaryMessage.Text(BinaryMessage.SET_LOCAL_ROBOT_PASSWORD_REQUEST, pw))
@@ -142,6 +147,7 @@ class RobotClient(AbstractRobot):
             success, other_version = self._connect(localpw, other_version)
             
         if success:
+            self.protocol_version = other_version
             return True
         else:
             raise Exception("Protocol version mismatch")

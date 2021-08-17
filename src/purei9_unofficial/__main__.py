@@ -60,17 +60,21 @@ credentials_local.add_argument('-l', "--localpw", type=str, help='robot localpw 
 
 cmds_local = args_local.add_subparsers(help='subcommand, default=find', dest="subcommand")
 
-cmds_local_find = cmds_local.add_parser('find', help='Find all robots in the local subnet.')
-
-cmds_local_find = cmds_local.add_parser('status', help='Get status of the robot.')
-cmds_local_start = cmds_local.add_parser('start', help='Tell the robot to start cleaning (note: toggles between play/pause).')
-cmds_local_home = cmds_local.add_parser('home', help='Tell the robot to go home.')
-cmds_local_pause = cmds_local.add_parser('pause', help='Tell the robot to pause cleaning (note: toggles between play/pause).')
-cmds_local_stop = cmds_local.add_parser('stop', help='Tell the robot to stop cleaning.')
+cmds_local_find   = cmds_local.add_parser('find', help='Find all robots in the local subnet.')
+cmds_local_status = cmds_local.add_parser('status', help='Get status of the robot.')
+cmds_local_start  = cmds_local.add_parser('start', help='Tell the robot to start cleaning (note: toggles between play/pause).')
+cmds_local_home   = cmds_local.add_parser('home', help='Tell the robot to go home.')
+cmds_local_pause  = cmds_local.add_parser('pause', help='Tell the robot to pause cleaning (note: toggles between play/pause).')
+cmds_local_stop   = cmds_local.add_parser('stop', help='Tell the robot to stop cleaning.')
+cmds_local_wifi   = cmds_local.add_parser('wifi', help='List wifi network available to the robot.')
+cmds_local_capa   = cmds_local.add_parser('capabilities', help='')
+cmds_local_set    = cmds_local.add_parser('settings', help='')
+cmds_local_msgs   = cmds_local.add_parser('messages', help='')
+cmds_local_all    = cmds_local.add_parser('allinfo', help='Get all the info available.')
 
 args = args_main.parse_args()
 
-OUTPUT = None
+OUTPUT  = None
 
 def exiterror(s, parser):
     parser.print_help()
@@ -139,7 +143,8 @@ if args.command == "cloud":
 elif args.command == "local":
     if args.subcommand == "find":
         OUTPUT = list(map(lambda robot: {"address": robot.address, "id": robot.id, "name": robot.name}, find_robots()))
-    elif args.subcommand in ["status", "start", "pause", "stop", "home"]:
+        
+    elif args.subcommand in ["status", "start", "pause", "stop", "home", "wifi", "capabilities", "settings", "messages", "allinfo"]:
         if args.address == None or args.localpw == None:
             exiterror("Requires address and localpw.", args_local)
         else:
@@ -147,7 +152,7 @@ elif args.command == "local":
             rc.connect(args.localpw)
             
             if args.subcommand == "status":
-                OUTPUT = [{
+                OUTPUT = {
                     "id": rc.getid(),
                     "name": rc.getname(),
                     "localpw": args.localpw,
@@ -155,7 +160,10 @@ elif args.command == "local":
                     "status": rc.getstatus(),
                     "battery": rc.getbattery(),
                     "firmware": rc.getfirmware(),
-                }]
+                    
+                    # non-standard
+                    "powermode": rc.getpowermode()
+                }
             elif args.subcommand == "start":
                 OUTPUT = rc.startclean()
             elif args.subcommand == "home":
@@ -164,6 +172,33 @@ elif args.command == "local":
                 OUTPUT = rc.pauseclean()
             elif args.subcommand == "stop":
                 OUTPUT = rc.stopclean()
+            elif args.subcommand == "wifi":
+                OUTPUT = rc.getwifinetworks()
+            elif args.subcommand == "capabilities":
+                OUTPUT = rc.getcapabilities()
+            elif args.subcommand == "settings":
+                OUTPUT = rc.getsettings()
+            elif args.subcommand == "messages":
+                OUTPUT = rc.getmessages()
+            elif args.subcommand == "allinfo":
+                args.output = "json"
+                OUTPUT = {
+                    "protocol_version": rc.protocol_version,
+                    "id": rc.getid(),
+                    "name": rc.getname(),
+                    "localpw": args.localpw,
+                    "connected": rc.isconnected(),
+                    "status": rc.getstatus(),
+                    "battery": rc.getbattery(),
+                    "firmware": rc.getfirmware_all(),
+                    "powermode": rc.getpowermode(),
+                    "settings": rc.getsettings(),
+                    "capabilities": rc.getcapabilities(),
+                    "messages": rc.getmessages(),
+                    "available_wifi_networks": rc.getwifinetworks(),
+                    
+                }
+            
     else:
         exiterror("Subcommand not specifed.", args_local)
 else:
@@ -171,9 +206,24 @@ else:
     
 if OUTPUT != None:
     if args.output == "table":
-        if type(OUTPUT) != type([]):
+        
+        if type(OUTPUT) == list:
+            if len(OUTPUT) == 0:
+                print("Note: Output is an empty list.")
+            elif type(OUTPUT[0]) == list:
+                print(tabulate.tabulate(OUTPUT, tablefmt="pretty"))
+            elif type(OUTPUT[0]) == dict:
+                print(tabulate.tabulate(OUTPUT, headers="keys", tablefmt="pretty"))
+            else:
+                OUTPUT = list(map(lambda x: [x], OUTPUT))
+                print(tabulate.tabulate(OUTPUT, tablefmt="pretty"))
+        elif type(OUTPUT) == dict:
+            OUTPUT = [OUTPUT]
+            print(tabulate.tabulate(OUTPUT, headers="keys", tablefmt="pretty"))
+        else:
             OUTPUT = [[OUTPUT]]
-        print(tabulate.tabulate(OUTPUT, headers="keys", tablefmt="pretty"))
+            print(tabulate.tabulate(OUTPUT, tablefmt="pretty"))
+        
     elif args.output == "json":
         print(json.dumps(OUTPUT, indent=2))
 
