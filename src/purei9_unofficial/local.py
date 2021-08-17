@@ -3,13 +3,15 @@ import ssl
 import struct
 import json
 import base64
+import logging
 
 from typing import List
 
-from .util import log
 from .message import BinaryMessage
 
 from .common import AbstractRobot, RobotStates, BatteryStatus, PowerModes
+
+logger = logging.getLogger(__name__)
 
 class RobotClient(AbstractRobot):
     
@@ -119,13 +121,13 @@ class RobotClient(AbstractRobot):
         if type(pkt) != BinaryMessage:
             raise Exception("pkt must by of type BinaryMessage")
         
-        log("<", str(pkt))
+        logger.debug("send " + str(pkt))
         self.stream.write(pkt.to_wire())
         self.stream.flush()
         
     def recv(self) -> BinaryMessage:
         pkt = BinaryMessage.from_stream(self.stream)
-        log(">", str(pkt))
+        logger.debug("recv " + str(pkt))
         return pkt
     
     def sendrecv(self, pkt : BinaryMessage) -> BinaryMessage:
@@ -138,7 +140,7 @@ class RobotClient(AbstractRobot):
         success, other_version = self._connect(localpw, 2016100701)
         
         if not(success):
-            log("i", "Protocol version mismatch, retrying with version " + str(other_version))
+            logger.debug("Protocol version mismatch, retrying with version " + str(other_version))
             success, other_version = self._connect(localpw, other_version)
             
         if success:
@@ -157,7 +159,8 @@ class RobotClient(AbstractRobot):
                 success (bool): Whether the connection was successful
         """
         
-        log("<", "Connecting to " + self.addr + ":" + str(self.port) + " version=" + str(version))
+        
+        logger.debug("Connecting to " + self.addr + ":" + str(self.port) + " version=" + str(version))
         tcp_socket = socket.create_connection((self.addr, self.port))
         
         ctx = ssl.create_default_context()
@@ -165,9 +168,9 @@ class RobotClient(AbstractRobot):
         ctx.verify_mode = ssl.CERT_NONE
         
         tls_sock = ctx.wrap_socket(tcp_socket)
-        log(">", "Connnected")
+        logger.debug("Connnected")
         
-        log("i", "Server Cert\n-----BEGIN CERTIFICATE-----\n" + base64.b64encode(tls_sock.getpeercert(binary_form=True)).decode("ascii") + "\n-----END CERTIFICATE-----")
+        logger.debug("Server Cert\n-----BEGIN CERTIFICATE-----\n" + base64.b64encode(tls_sock.getpeercert(binary_form=True)).decode("ascii") + "\n-----END CERTIFICATE-----")
         
         tls_sock.do_handshake()
         self.stream = tls_sock.makefile("rwb")
@@ -179,7 +182,7 @@ class RobotClient(AbstractRobot):
             # raise Exception("Protocol version mismatch (" + str(pkt.user1) + " != " + str(version) + ")")
         
         self.robot_id = pkt.parsed
-        log("i", "Hello from Robot ID: " + self.robot_id)
+        logger.debug("Hello from Robot ID: " + self.robot_id)
         
         pkt = self.sendrecv(BinaryMessage.Text(BinaryMessage.MSG_LOGIN, localpw))
         
@@ -188,7 +191,7 @@ class RobotClient(AbstractRobot):
         
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_PING))
         
-        log("i", "Connection Still alive, seems we are authenticated")
+        logger.debug("Connection Still alive, seems we are authenticated")
         return True, version
     
     def disconnect(self) -> None:
@@ -223,6 +226,7 @@ def find_robots(timeout = 0.2 , retry_count = 1) -> List[FoundRobot]:
     pkt = BinaryMessage.HeaderOnly(BinaryMessage.MSG_GET_ADDRESS_REQUEST, local_port)
     # pkt.user2 = 0xDEADBEEF # 8094
     
+    logger.debug("sendto " + broadcast_address + "#" + str(robot_port) + " " + str(pkt))
     s.sendto(pkt.to_wire(), (broadcast_address, robot_port))
     
     while True:
@@ -235,6 +239,7 @@ def find_robots(timeout = 0.2 , retry_count = 1) -> List[FoundRobot]:
             break
         
         pkt = BinaryMessage.from_wire(pkt)
+        logger.debug("recvfrom " + sender[0] + "#" + str(sender[1]) + " " + str(pkt))
         
         if pkt.major == 6 and pkt.minor == BinaryMessage.MSG_GET_ADDRESS_RESPONSE:
             robots_found.append(FoundRobot(sender[0], pkt.parsed["RobotID"], pkt.parsed["RobotName"]))
