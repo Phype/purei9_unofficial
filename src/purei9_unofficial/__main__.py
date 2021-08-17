@@ -48,7 +48,7 @@ cmds_cloud_pause.add_argument("-r", "--robotid", type=str, help='ID of robot.', 
 cmds_cloud_stop = cmds_cloud.add_parser('stop', help='Tell a robot to stop cleaning.')
 cmds_cloud_stop.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
 
-cmds_cloud_maps = cmds_cloud.add_parser('maps', help='Download maps (experimental).')
+cmds_cloud_maps = cmds_cloud.add_parser('maps', help='List maps and zones (experimental).')
 cmds_cloud_maps.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
 
 # local
@@ -99,6 +99,8 @@ if args.command == "cloud":
     elif args.apiversion == 2:
         client = CloudClientv2(username=username, password=password, token=token)
         
+    robots = client.getRobots()
+        
     if args.subcommand == "status":
         OUTPUT = list(map(lambda rc: {
                 "id": rc.getid(),
@@ -108,7 +110,7 @@ if args.command == "cloud":
                 "status": rc.getstatus(),
                 "battery": rc.getbattery(),
                 "firmware": rc.getfirmware(),
-            }, client.getRobots()))
+            }, robots))
         
     elif args.subcommand in ["start", "home", "pause", "stop", "maps"]:
         if args.robotid == None:
@@ -130,9 +132,13 @@ if args.command == "cloud":
         
         if args.subcommand == "maps":
             OUTPUT = []
-            for map in rc.getMaps():
-                map.get()
-                OUTPUT.append(map.info)
+            for m in rc.getMaps():
+                # map.get()
+                OUTPUT.append({
+                    "id": m.id,
+                    "name": m.name, 
+                    "zones": list(map(lambda zone: zone.name, m.zones)), 
+                })
         
     else:
         exiterror("Subcommand not specifed.", args_cloud)

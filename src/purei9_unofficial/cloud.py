@@ -124,7 +124,7 @@ class CloudRobot(AbstractRobot):
     def getMaps(self):
         r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.id + "/interactivemaps", auth=self.cloudclient.httpauth)
         
-        return list(map(lambda x: CloudMap(self, x["Id"]), r.json()))
+        return list(map(lambda x: CloudMap(self, x), r.json()))
 
 class CloudClient:
     
@@ -154,15 +154,21 @@ class CloudClient:
     
 class CloudMap:
     
-    def __init__(self, cloudrobot, id):
+    def __init__(self, cloudrobot, js):
         
         self.cloudclient = cloudrobot.cloudclient
         self.robot       = cloudrobot
-        self.id          = id
+        self.id          = js["Id"]
+        
+        self.name        = js["Name"]
+        self.zones       = list(map(lambda x: CloudZone(self, x), js["Zones"]))
+        
         self.info        = None
         self.image       = None
         
-    def get(self):
+        # self._get()
+        
+    def _get(self):
         r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.robot.id + "/interactivemaps/" + self.id, auth=self.cloudclient.httpauth)
         
         js = r.json()
@@ -173,6 +179,20 @@ class CloudMap:
         self.info = js
         
         return self.info
+    
+class CloudZone:
+    
+    def __init__(self, cloudmap, js):
+        
+        self.cloudclient  = cloudmap.cloudclient
+        self.map          = cloudmap
+        self.id           = js["Id"]
+        
+        self.name         = js["Name"]
+        self.type         = js["ZoneType"]
+        self.roomcategory = js["RoomCategory"]
+        
+        # self._get()
 
 ###
 
