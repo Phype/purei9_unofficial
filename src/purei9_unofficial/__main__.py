@@ -51,6 +51,9 @@ cmds_cloud_stop.add_argument("-r", "--robotid", type=str, help='ID of robot.', r
 cmds_cloud_maps = cmds_cloud.add_parser('maps', help='List maps and zones (experimental).')
 cmds_cloud_maps.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
 
+cmds_cloud_history = cmds_cloud.add_parser('history', help='List history (experimental).')
+cmds_cloud_history.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
+
 # local
 args_local = cmds_main.add_parser('local', help='Connect to robot(s) via local network.')
 
@@ -102,6 +105,7 @@ if args.command == "cloud":
     robots = client.getRobots()
         
     if args.subcommand == "status":
+        
         OUTPUT = list(map(lambda rc: {
                 "id": rc.getid(),
                 "name": rc.getname(),
@@ -112,7 +116,7 @@ if args.command == "cloud":
                 "firmware": rc.getfirmware(),
             }, robots))
         
-    elif args.subcommand in ["start", "home", "pause", "stop", "maps"]:
+    elif args.subcommand in ["start", "home", "pause", "stop", "maps", "history"]:
         if args.robotid == None:
             exiterror("Requires robotid.", args_cloud)
         
@@ -130,8 +134,17 @@ if args.command == "cloud":
         if args.subcommand == "stop":
             OUTPUT = rc.stopclean()
         
+        if args.subcommand == "history":
+            OUTPUT = []
+            
+            for sess in rc.getCleaningSessions():
+                OUTPUT.append(sess)
+        
         if args.subcommand == "maps":
             OUTPUT = []
+        
+            rc.getCleaningSessions()    
+            
             for m in rc.getMaps():
                 
                 from .imageascii import image_json_2_ascii

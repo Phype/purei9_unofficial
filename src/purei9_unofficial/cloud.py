@@ -99,6 +99,40 @@ class CloudRobot(AbstractRobot):
     def stopclean(self):
         return self._sendCleanCommand(5)
     
+    def getCleaningSessions(self, nextptr=None):
+        
+        r = do_http("POST", self.cloudclient.apiurl + "/robots/CleanedAreas", auth=self.cloudclient.httpauth, json={
+            "Next": nextptr,
+            "Previous": None,
+            "Limit": 50,
+            "RobotID": self.id,
+            "Email": self.cloudclient.credentials["Email"],
+            "AccountPassword": self.cloudclient.credentials["AccountPassword"]
+        })
+        
+        if r.status_code == 204:
+            return []
+        
+        js = r.json()
+        
+        items = list(map(
+            lambda x: {
+                "timestamp": x["TimeStamp"],
+                "cleaned_area": x["CleanedArea"],
+                "image": "https://mobile.rvccloud.electrolux.com/image/map/png/" + x["CleaningSession"]["MapImageUrl"] if x["CleaningSession"]["MapImageUrl"] else None,
+                "map": x["CleaningSession"]["PersistentMapId"],
+                "status": x["CleaningSession"]["Completion"],
+                "usererror": x["CleaningSession"]["RobotUserError"],
+                "internalerror": x["CleaningSession"]["RobotInternalError"],
+            },
+            js["Items"]
+        ))
+            
+        if js["Next"] != None:
+            items += self.getCleaningSessions(nextptr=js["Next"])
+
+        return items
+    
     ###
     
     def _sendCleanCommand(self, command):
@@ -159,6 +193,7 @@ class CloudMap:
         self.cloudclient = cloudrobot.cloudclient
         self.robot       = cloudrobot
         self.id          = js["Id"]
+        self.interactiveid = js["InteractiveId"]
         
         self.name        = js["Name"]
         self.zones       = list(map(lambda x: CloudZone(self, x), js["Zones"]))
@@ -167,6 +202,17 @@ class CloudMap:
         self.image       = None
         
         # self._get()
+        
+    def getImage2(self):
+        r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.robot.id + "/interactivemaps/" + self.id + "/" + self.interactiveid, auth=self.cloudclient.httpauth)
+        
+        js = r.json()
+        
+        # image = base64.b64decode(js["PngImage"])
+        # del js["PngImage"]
+        # self.info = js
+        
+        return js
         
     def getImage(self):
         r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.robot.id + "/interactivemaps/" + self.id, auth=self.cloudclient.httpauth)
