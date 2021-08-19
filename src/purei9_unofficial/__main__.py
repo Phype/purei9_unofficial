@@ -137,7 +137,20 @@ if args.command == "cloud":
         if args.subcommand == "history":
             OUTPUT = []
             
+            i = 0
             for sess in rc.getCleaningSessions():
+                
+                from .imageascii import draw2shade
+                
+                try:
+                    if i < 10:
+                        sess["image"] = draw2shade(sess["image"]) + "_"
+                        i += 1
+                    else:
+                        sess["image"] = "(not show)"
+                except:
+                    sess["image"] = ""
+                
                 OUTPUT.append(sess)
         
         if args.subcommand == "maps":
@@ -149,9 +162,10 @@ if args.command == "cloud":
                 
                 from .imageascii import image_json_2_ascii
                 js = m.getImage()
-                print(image_json_2_ascii(js))
+                # print(image_json_2_ascii(js))
                 
                 OUTPUT.append({
+                    "image": image_json_2_ascii(js),
                     "id": m.id,
                     "name": m.name, 
                     "zones": list(map(lambda zone: zone.name, m.zones)), 
