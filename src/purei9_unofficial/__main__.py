@@ -133,7 +133,11 @@ if args.command == "cloud":
         if args.subcommand == "maps":
             OUTPUT = []
             for m in rc.getMaps():
-                # map.get()
+                
+                from .imageascii import image_json_2_ascii
+                js = m.getImage()
+                print(image_json_2_ascii(js))
+                
                 OUTPUT.append({
                     "id": m.id,
                     "name": m.name, 

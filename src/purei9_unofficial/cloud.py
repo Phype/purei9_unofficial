@@ -168,17 +168,16 @@ class CloudMap:
         
         # self._get()
         
-    def _get(self):
+    def getImage(self):
         r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.robot.id + "/interactivemaps/" + self.id, auth=self.cloudclient.httpauth)
         
         js = r.json()
         
-        self.image = base64.b64decode(js["PngImage"])
+        # image = base64.b64decode(js["PngImage"])
+        # del js["PngImage"]
+        # self.info = js
         
-        del js["PngImage"]
-        self.info = js
-        
-        return self.info
+        return js
     
 class CloudZone:
     
