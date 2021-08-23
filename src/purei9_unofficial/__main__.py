@@ -5,6 +5,7 @@ import logging
 
 from .local import RobotClient, find_robots
 from .cloud import CloudClient, CloudClientv2
+from .credentialstore import CredentialStore, CREDENTIAL_STORE_PATH
 
 # Setup logging
 root = logging.getLogger()
@@ -20,6 +21,8 @@ logger = logging.getLogger(__name__)
 args_main = argparse.ArgumentParser(prog=sys.argv[0])
 args_main.add_argument("-d", '--debug', action='store_true', help='enable debug logging')
 args_main.add_argument("-o", '--output', type=str, help='output format', choices=["table", "json"], default="table")
+args_main.add_argument("-s", '--store-credentials', action='store_true', help='Store/Use crendetials from ' + CREDENTIAL_STORE_PATH)
+
 cmds_main = args_main.add_subparsers(help='command', dest="command")
 
 # cloud v1/v2
@@ -27,10 +30,11 @@ args_cloud = cmds_main.add_parser('cloud', help='Connect to electrolux purei9 cl
 
 args_cloud.add_argument('-v', "--apiversion", type=int, help='Cloud API version, v1=purei9, v2=wellbeing', choices=[1,2], default=1)
 
-credentials_sub = args_cloud.add_argument_group("Credentials", "One of these is required.")
-credentials = credentials_sub.add_mutually_exclusive_group(required=True)
-credentials.add_argument('-c', "--credentials", type=str, help='elecrolux cloud credentails in username:password format')
-credentials.add_argument('-t', "--token", type=str, help='electrolux v2 API token')
+#credentials_sub = args_cloud.add_argument_group("Credentials", "One of these is required.")
+#credentials = credentials_sub.add_mutually_exclusive_group(required=True)
+
+args_cloud.add_argument('-c', "--credentials", type=str, help='elecrolux cloud credentails in username:password format')
+args_cloud.add_argument('-t', "--token", type=str, help='electrolux v2 API token')
 
 cmds_cloud = args_cloud.add_subparsers(help='subcommand, default=status', dest="subcommand")
 
@@ -74,6 +78,8 @@ cmds_local_stop = cmds_local.add_parser('stop', help='Tell the robot to stop cle
 
 args = args_main.parse_args()
 
+credentialstore = CredentialStore(do_store=args.store_credentials)
+
 OUTPUT = None
 
 def exiterror(s, parser):
@@ -86,21 +92,37 @@ if args.debug:
 
 if args.command == "cloud":
         
-    username = None
-    password = None
-    token    = args.token
+    # username = None
+    # password = None
+    # token    = args.token
     
     if args.credentials != None:
-        username, password = args.credentials.split(":")
+        parts = args.credentials.split(":", 2)
+        credentialstore.cloud_email = parts[0]
+        credentialstore.cloud_passwort = parts[1]
+    
+    if args.token != None:
+        credentialstore.cloud_token = args.token
         
     client = None
         
     if args.apiversion == 1:
-        if args.credentials == None:
-            exiterror("Cloud API v1 cannot use token.", args_cloud)
-        client = CloudClient(username, password)
+        if credentialstore.cloud_email == None:
+            exiterror("No crentials supplied.", args_cloud)
+        
+        client = CloudClient(credentialstore.cloud_email, credentialstore.cloud_passwort)
+        credentialstore.save()
+        
     elif args.apiversion == 2:
-        client = CloudClientv2(username=username, password=password, token=token)
+        if credentialstore.cloud_email == None and credentialstore.cloud_token == None:
+            exiterror("No crentials supplied.", args_cloud)
+        
+        client = CloudClientv2(username=credentialstore.cloud_email, password=credentialstore.cloud_passwort, token=credentialstore.cloud_token)
+        
+        client.tryLogin()
+        
+        credentialstore.cloud_token = client.gettoken()
+        credentialstore.save()
         
     robots = client.getRobots()
         

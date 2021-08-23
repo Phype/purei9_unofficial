@@ -374,6 +374,7 @@ class CloudClientv2:
             
         else:
             self.token = None
+            
         
     def _getHeaders(self):
         
@@ -386,6 +387,9 @@ class CloudClientv2:
             self.settoken(r.text)
         
         return {"Authorization": "Bearer " + self.token["accessToken"]}
+    
+    def tryLogin(self):
+        self.getRobots()
         
     def getRobot(self, id):
         for r in self.getRobots():
