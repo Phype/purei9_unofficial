@@ -86,6 +86,9 @@ class CloudRobot(AbstractRobot):
     
     def getlocalpw(self):
         return self._getinfo()["LocalRobotPassword"]
+
+    def isecomode(self):
+        return self._getinfo()["EcoMode"]
     
     def startclean(self):
         return self._sendCleanCommand(1)
@@ -98,6 +101,9 @@ class CloudRobot(AbstractRobot):
     
     def stopclean(self):
         return self._sendCleanCommand(5)
+
+    def setecomode(self, ecomode):
+        return self._sendCommand(self, {"EcoMode": ecomode})
     
     def getCleaningSessions(self, nextptr=None):
         
@@ -136,24 +142,24 @@ class CloudRobot(AbstractRobot):
     ###
     
     def _sendCleanCommand(self, command):
-        
+        return self._sendCommand({"CleaningCommand": command})
+
+    def _sendCommand(self, body):
+
         headers = self.cloudclient.credentials.copy()
         headers["RobotId"] = self.id
-        
+
         ws = websocket.WebSocket()
         ws.connect("wss://mobile.rvccloud.electrolux.com/api/v1/websocket/AppUser", header = headers)
         ws.send(json.dumps({
-            "Type": 1, # 1 Requst, 2 Response, 3 Event
+            "Type": 1, # 1 Request, 2 Response, 3 Event
             "Command": "AppUpdate",
-            "Body": {
-                "CleaningCommand": command,
-            }
+            "Body": body
         }))
         ws.recv()
         ws.close()
-        
+
         return True
-        
         
     def getMaps(self):
         r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.id + "/interactivemaps", auth=self.cloudclient.httpauth)
