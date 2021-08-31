@@ -103,7 +103,7 @@ class CloudRobot(AbstractRobot):
         return self._sendCleanCommand(5)
 
     def setecomode(self, ecomode):
-        return self._sendCommand(self, {"EcoMode": ecomode})
+        return self._sendCommand({"EcoMode": ecomode})
     
     def getCleaningSessions(self, nextptr=None):
         
