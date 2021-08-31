@@ -150,16 +150,19 @@ class CloudRobot(AbstractRobot):
         headers["RobotId"] = self.id
 
         ws = websocket.WebSocket()
-        ws.connect("wss://mobile.rvccloud.electrolux.com/api/v1/websocket/AppUser", header = headers)
-        ws.send(json.dumps({
-            "Type": 1, # 1 Request, 2 Response, 3 Event
-            "Command": "AppUpdate",
-            "Body": body
-        }))
-        ws.recv()
-        ws.close()
 
-        return True
+        try:
+            ws.connect("wss://mobile.rvccloud.electrolux.com/api/v1/websocket/AppUser", header = headers)
+            ws.send(json.dumps({
+                "Type": 1, # 1 Request, 2 Response, 3 Event
+                "Command": "AppUpdate",
+                "Body": body
+            }))
+            ws.recv()
+
+            return True
+        finally:
+            ws.close()
         
     def getMaps(self):
         r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.id + "/interactivemaps", auth=self.cloudclient.httpauth)
