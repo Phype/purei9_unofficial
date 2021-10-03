@@ -99,9 +99,9 @@ class CloudRobot(AbstractRobot):
         
         elif isecomode is not None:
             if isecomode:
-                powermode = PowerMode.LOW
-            else:
                 powermode = PowerMode.MEDIUM
+            else:
+                powermode = PowerMode.HIGH
         else:
             powermode = PowerMode.MEDIUM
             
@@ -130,9 +130,9 @@ class CloudRobot(AbstractRobot):
             self._sendCommand({"PowerMode": mode.value})
             
         elif isecomode is not None:
-            if mode == PowerMode.LOW:
+            if mode == PowerMode.MEDIUM:
                 self._sendCommand({"EcoMode": True})
-            elif mode == PowerMode.MEDIUM:
+            elif mode == PowerMode.HIGH:
                 self._sendCommand({"EcoMode": False})
             else:
                 raise Exception("Robot does not support " + str(mode))
@@ -379,6 +379,9 @@ class CloudRobotv2(AbstractRobot):
         return self._getinfo()["connectionState"] == "Connected"
     
     def getlocalpw(self):
+        return None
+    
+    def getpowermode(self):
         return None
         
     ###

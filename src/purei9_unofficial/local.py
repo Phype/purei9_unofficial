@@ -9,7 +9,7 @@ from typing import List
 
 from .message import BinaryMessage
 
-from .common import AbstractRobot, RobotStates, BatteryStatus, PowerModes
+from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +98,7 @@ class RobotClient(AbstractRobot):
     
     def getpowermode(self) -> dict:
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GET_POWER_MODE_REQUEST))
-        return PowerModes[pkt.user1]
+        return PowerMode(pkt.user1)
     
     def getsettings(self) -> dict:
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GETSETTINGS))

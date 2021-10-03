@@ -141,7 +141,7 @@ if args.command == "cloud":
                 "status": rc.getstatus(),
                 "battery": rc.getbattery(),
                 "firmware": rc.getfirmware(),
-                "ecomode": rc.getpowermode().name
+                "powermode": rc.getpowermode().name if args.apiversion == 1 else None
             }, robots))
         
     elif args.subcommand in ["start", "home", "pause", "stop", "maps", "history", "mode"]:
@@ -226,6 +226,7 @@ elif args.command == "local":
                     "status": rc.getstatus(),
                     "battery": rc.getbattery(),
                     "firmware": rc.getfirmware(),
+                    "powermode": rc.getpowermode().name
                 }]
             elif args.subcommand == "start":
                 OUTPUT = rc.startclean()
