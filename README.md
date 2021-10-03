@@ -1,19 +1,17 @@
 purei9_unofficial
 =================
 
-Small proof-of-concept client to connect to Electrolux and AEG cleaner robots.
+This project includes a client/library to connect to Electrolux and AEG cleaner robots.
 
 Compatibility
 -------------
 
-Only tested with an AEX RX9 (aka purei9) first Generation.
-
-Update: Also seems to work with Purei9.2: https://community.home-assistant.io/t/integrating-eectrolux-pure-i9-robotic-vacuum/78648/11
+Tested with an AEX RX9 (aka purei9) first Generation and second (aka purei9.2) Generation.
 
 Security
 --------
 
-Other than the purei9 app, this tool does not verify the robot's TLS certificate, so beware of MitMs in your LAN, eavedropping on your robot. In case you are curious how the trust model works anyway: The TLS certificate of the robot is self signed and verified against a known public key which is gathered from the purei9 cloud.
+Other than the purei9 app, this tool does not verify the robot's TLS certificate when using it in "local" mode, so beware of MitMs in your LAN, eavedropping on your robot. In case you are curious how the trust model works anyway: The TLS certificate of the robot is self signed and verified against a known public key which is gathered from the purei9 cloud.
 
 Disclaimer
 ----------
@@ -34,19 +32,33 @@ If you want to use the CLI (not only the library) you additionally need to insta
 Usage
 -----
 
-First you need to get your local robot pw to talk to the robot.
+The library currently implements 3 interfaces which allows controlling the robot: locally (via a TCP connection on port 3002), and via the 2 different electrolux cloud services. The interface which uses the first version of the electrolux cloud API is the one with the most features implemented currently.
+
+### connection via cloud
+
+See your robots status
 
 	$ python -m purei9_unofficial cloud -c user@email.com:mypassword status
-	[
-		{
-			"RobotID": "900395798357985798375972",
-			"Connected": true,
-			"FirmwareVersion": "40.17",
-			...
-			"LocalRobotPassword": "29379204",
-			...
-		}
-	]
+	+--------------------------+---------+----------+-----------+----------+---------+----------+-----------+
+	|            id            |  name   | localpw  | connected |  status  | battery | firmware | powermode |
+	+--------------------------+---------+----------+-----------+----------+---------+----------+-----------+
+	| 900395798357985798375972 | Cleaner | 01234567 |   True    | Sleeping |  High   |  42.19   |   HIGH    |
+	+--------------------------+---------+----------+-----------+----------+---------+----------+-----------+
+	
+Start a cleaning session
+
+	$ python -m purei9_unofficial cloud -c user@email.com:mypassword start -r 900395798357985798375972
+
+### local connection
+
+First you need to get your local robot pw to talk to the robot via the cloud API. Note that this only works if your robot was initalized with the old purei9 App (not the "wellbeing" App, see [issue#6](https://github.com/Phype/purei9_unofficial/issues/6)).
+
+	$ python -m purei9_unofficial cloud -c user@email.com:mypassword status
+	+--------------------------+---------+----------+-----------+----------+---------+----------+-----------+
+	|            id            |  name   | localpw  | connected |  status  | battery | firmware | powermode |
+	+--------------------------+---------+----------+-----------+----------+---------+----------+-----------+
+	| 900395798357985798375972 | Cleaner | 01234567 |   True    | Sleeping |  High   |  42.19   |   HIGH    |
+	+--------------------------+---------+----------+-----------+----------+---------+----------+-----------+
 	
 You can also use the tool to locate any robots in the network
 
@@ -57,89 +69,84 @@ You can also use the tool to locate any robots in the network
 	| 192.168.1.101 | 900395798357985798375972 | Cleaner |
 	+---------------+--------------------------+---------+
 	
-Now you can connect to your robot.
+Now you can connect to your robot locally, get the status and start/stop it.
 
-	$ python -m purei9_unofficial local -a 192.168.1.101 -l 29379204 status
+	$ python -m purei9_unofficial local -a 192.168.1.101 -l 01234567 status
+	$ python -m purei9_unofficial local -a 192.168.1.101 -l 01234567 start
+
+### More usage
+
+#### Common options
+
+	$ python -m purei9_unofficial --help
+	usage: purei9_unofficial/__main__.py [-h] [-d] [-o {table,json}] [-s] {cloud,local} ...
+
+	positional arguments:
+	  {cloud,local}         command
+	    cloud               Connect to electrolux purei9 cloud (old API).
+	    local               Connect to robot(s) via local network.
+
+	optional arguments:
+	  -h, --help            show this help message and exit
+	  -d, --debug           enable debug logging
+	  -o {table,json}, --output {table,json}
+				output format
+	  -s, --store-credentials
+				Store/Use crendetials from /home/philipp/.local/share/purei9_unofficial
+                            
+#### Cloud
+
+	$ python -m purei9_unofficial cloud --help
+	usage: purei9_unofficial/__main__.py cloud [-h] [-v {1,2}] [-c CREDENTIALS] [-t TOKEN] {status,start,home,pause,stop,maps,history,mode} ...
+
+	positional arguments:
+	  {status,start,home,pause,stop,maps,history,mode}
+				subcommand, default=status
+	    status              Get status of all robots.
+	    start               Tell a robot to start cleaning.
+	    home                Tell a robot to go home.
+	    pause               Tell a robot to pause cleaning.
+	    stop                Tell a robot to stop cleaning.
+	    maps                List maps and zones (experimental).
+	    history             List history (experimental).
+	    mode                Set a robots powermode.
+
+	optional arguments:
+	  -h, --help            show this help message and exit
+	  -v {1,2}, --apiversion {1,2}
+				Cloud API version, v1=purei9, v2=wellbeing
+	  -c CREDENTIALS, --credentials CREDENTIALS
+				elecrolux cloud credentails in username:password format
+	  -t TOKEN, --token TOKEN
+				electrolux v2 API token
+
+#### Local
 	
-	 [<] Connecting to 192.168.1.101:3002
-	 [>] Connnected
-	 [i] Server Cert
-	-----BEGIN CERTIFICATE-----
-	...
-	-----END CERTIFICATE-----
-	...
-	 [>] recv 3009 user1=0 user2=0 len=47
-	{
-		"id": "900395798357985798375972",
-		"name": "Cleaner",
-		"status": "Sleeping",
-		"settings": {
-			"EcoMode": false,
-			"Language": "eng",
-			"Mute": false
-		}
-	}
+	$ python -m purei9_unofficial local --help
+	usage: purei9_unofficial/__main__.py local [-h] [-a ADDRESS] [-l LOCALPW] {find,status,wifi,start,home,pause,stop,mode} ...
 
-More usage:
+	positional arguments:
+	  {find,status,wifi,start,home,pause,stop,mode}
+				subcommand, default=find
+	    find                Find all robots in the local subnet.
+	    status              Get status of the robot.
+	    wifi                Get available wifi networks for the robot.
+	    start               Tell the robot to start cleaning (note: toggles between play/pause).
+	    home                Tell the robot to go home.
+	    pause               Tell the robot to pause cleaning (note: toggles between play/pause).
+	    stop                Tell the robot to stop cleaning.
+	    mode                Set a robots powermode.
 
-    usage: purei9_unofficial [-h] [-d] [-o {table,json}] {cloud,local} ...
+	optional arguments:
+	  -h, --help            show this help message and exit
 
-    positional arguments:
-    {cloud,local}         command
-        cloud               Connect to electrolux purei9 cloud (old API).
-        local               Connect to robot(s) via local network.
+	Credentials:
+	  Required for all commands except "find".
 
-    optional arguments:
-    -h, --help            show this help message and exit
-    -d, --debug           enable debug logging
-    -o {table,json}, --output {table,json}
-                            output format
-                            
-
-    usage: purei9_unofficial cloud [-h] [-v {1,2}] (-c CREDENTIALS | -t TOKEN) {status,start,home,maps} ...
-
-    positional arguments:
-    {status,start,home,maps}
-                            subcommand, default=status
-        status              Get status of all robots.
-        start               Tell a robot to start cleaning.
-        home                Tell a robot to go home.
-        maps                Download maps (experimental).
-
-    optional arguments:
-    -h, --help            show this help message and exit
-    -v {1,2}, --apiversion {1,2}
-                            Cloud API version, v1=purei9, v2=wellbeing
-
-    Credentials:
-    One of these is required.
-
-    -c CREDENTIALS, --credentials CREDENTIALS
-                            elecrolux cloud credentails in username:password format
-    -t TOKEN, --token TOKEN
-                            electrolux v2 API token
-
-                            
-    purei9_unofficial local [-h] [-a ADDRESS] [-l LOCALPW] {find,status,start,home} ...
-
-    positional arguments:
-    {find,status,start,home}
-                            subcommand, default=find
-        find                Find all robots in the local subnet.
-        status              Get status of the robot.
-        start               Tell the robot to start cleaning.
-        home                Tell the robot to go home.
-
-    optional arguments:
-    -h, --help            show this help message and exit
-
-    Credentials:
-    Required for all commands except "find".
-
-    -a ADDRESS, --address ADDRESS
-                            robot ip address
-    -l LOCALPW, --localpw LOCALPW
-                            robot localpw (get via "cloud -v1 status")
+	  -a ADDRESS, --address ADDRESS
+				robot ip address
+	  -l LOCALPW, --localpw LOCALPW
+				robot localpw (get via "cloud -v1 status")
 
 Library usage
 -------------
