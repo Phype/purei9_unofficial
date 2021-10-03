@@ -179,8 +179,6 @@ if args.command == "cloud":
         if args.subcommand == "maps":
             OUTPUT = []
         
-            rc.getCleaningSessions()    
-            
             for m in rc.getMaps():
                 
                 js = m.getImage()

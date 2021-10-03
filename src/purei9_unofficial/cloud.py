@@ -125,7 +125,7 @@ class CloudRobot(AbstractRobot):
                 "usererror": x["CleaningSession"]["RobotUserError"],
                 "internalerror": x["CleaningSession"]["RobotInternalError"],
             },
-            js["Items"]
+            filter(lambda x: x["CleaningSession"] != None, js["Items"])
         ))
             
         if js["Next"] != None:
@@ -163,12 +163,14 @@ class CloudRobot(AbstractRobot):
 class CloudClient:
     
     def __init__(self, email, password):
+        
         password = CloudClient.chksum(password)
         self.apiurl = "https://mobile.rvccloud.electrolux.com/api/v1"
         self.credentials = {
             "AccountPassword": password,
             "Email": email,
         }
+        
         self.httpauth = requests.auth.HTTPBasicAuth(email, password)
         
     @staticmethod

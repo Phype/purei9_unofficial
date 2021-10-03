@@ -27,12 +27,25 @@ def pixelfunc(x):
     return x[3] >= 200
 
 def pixelfunc2(x):
+
+    # Cleaned
+    # Purei9
     if 195 <= x[1]: #  and x[1] <= 196:
-        return 2
+        r= 2
+
+    # Cleaned
+    # Purei9.2 seems to use differen colors ?!
+    elif 148 <= x[0] and x[0] <= 149:
+        r=2
+    
+    # Uncleaned
     elif 127 <= x[1] and x[1] <= 128:
-        return 1
+        r=1
+    
     else:
-        return 0
+        r=0
+
+    return r
 
 def pic2block(pic, w, h, charger=None, twoshade=False, border = False, halfblock = True):
     global BLOCKS
@@ -227,7 +240,7 @@ def image_json_2_ascii(js):
 
 import requests
 
-def draw2shade(url):
+def draw2shade(url, show=False):
     
     r = requests.get(url)
     imagebytes = io.BytesIO(r.content)
@@ -242,9 +255,13 @@ def draw2shade(url):
         
         buf = pic2block(pixelMap, img.size[0], img.size[1], charger=None, twoshade=True)
         
-        
-        #img = img.resize((68*10, 32*10), resample=PIL.Image.NEAREST)
-        #img.show()
+        if show:
+            img = img.resize((68*10, 32*10), resample=PIL.Image.NEAREST)
+            img.show()
         
     return buf
+
+if __name__ == "__main__":
+    import sys
+    print(draw2shade(sys.argv[1], show=False))
 
