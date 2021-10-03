@@ -96,9 +96,13 @@ class RobotClient(AbstractRobot):
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GET_CAPABILITIES_REQUEST))
         return json.loads(pkt.parsed)
     
-    def getpowermode(self) -> dict:
+    def getpowermode(self) -> PowerMode:
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GET_POWER_MODE_REQUEST))
         return PowerMode(pkt.user1)
+    
+    def setpowermode(self, mode):
+        pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_SET_POWER_MODE_REQUEST, user1=mode.value))
+        return None
     
     def getsettings(self) -> dict:
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GETSETTINGS))

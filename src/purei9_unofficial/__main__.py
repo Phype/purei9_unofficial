@@ -81,6 +81,9 @@ cmds_local_home = cmds_local.add_parser('home', help='Tell the robot to go home.
 cmds_local_pause = cmds_local.add_parser('pause', help='Tell the robot to pause cleaning (note: toggles between play/pause).')
 cmds_local_stop = cmds_local.add_parser('stop', help='Tell the robot to stop cleaning.')
 
+cmds_local_mode = cmds_local.add_parser('mode', help='Set a robots powermode.')
+cmds_local_mode.add_argument("-m", "--mode", type=str, choices=list(map(lambda x: x.name, list(PowerMode))), help='Mode to set.', required=True)
+
 args = args_main.parse_args()
 
 credentialstore = CredentialStore(do_store=args.store_credentials)
@@ -210,7 +213,8 @@ if args.command == "cloud":
 elif args.command == "local":
     if args.subcommand == "find":
         OUTPUT = list(map(lambda robot: {"address": robot.address, "id": robot.id, "name": robot.name}, find_robots()))
-    elif args.subcommand in ["status", "start", "pause", "stop", "home", "wifi"]:
+        
+    elif args.subcommand in ["status", "start", "pause", "stop", "home", "wifi", "mode"]:
         if args.address == None or args.localpw == None:
             exiterror("Requires address and localpw.", args_local)
         else:
@@ -238,6 +242,8 @@ elif args.command == "local":
                 OUTPUT = rc.stopclean()
             elif args.subcommand == "wifi":
                 OUTPUT = list(map(lambda x: {"name": x}, rc.getwifinetworks()))
+            elif args.subcommand == "mode":
+                OUTPUT = rc.setpowermode(PowerMode[args.mode])
     else:
         exiterror("Subcommand not specifed.", args_local)
 else:
