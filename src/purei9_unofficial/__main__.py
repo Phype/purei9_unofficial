@@ -6,6 +6,7 @@ import logging
 from .local import RobotClient, find_robots
 from .cloud import CloudClient, CloudClientv2
 from .credentialstore import CredentialStore, CREDENTIAL_STORE_PATH
+from .common import PowerMode
 
 # Setup logging
 root = logging.getLogger()
@@ -57,6 +58,10 @@ cmds_cloud_maps.add_argument("-r", "--robotid", type=str, help='ID of robot.', r
 
 cmds_cloud_history = cmds_cloud.add_parser('history', help='List history (experimental).')
 cmds_cloud_history.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
+
+cmds_cloud_mode = cmds_cloud.add_parser('mode', help='Set a robots powermode.')
+cmds_cloud_mode.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
+cmds_cloud_mode.add_argument("-m", "--mode", type=str, choices=list(map(lambda x: x.name, list(PowerMode))), help='Mode to set.', required=True)
 
 # local
 args_local = cmds_main.add_parser('local', help='Connect to robot(s) via local network.')
@@ -136,9 +141,10 @@ if args.command == "cloud":
                 "status": rc.getstatus(),
                 "battery": rc.getbattery(),
                 "firmware": rc.getfirmware(),
+                "ecomode": rc.getpowermode().name
             }, robots))
         
-    elif args.subcommand in ["start", "home", "pause", "stop", "maps", "history"]:
+    elif args.subcommand in ["start", "home", "pause", "stop", "maps", "history", "mode"]:
         if args.robotid == None:
             exiterror("Requires robotid.", args_cloud)
         
@@ -194,6 +200,9 @@ if args.command == "cloud":
                     "name": m.name, 
                     "zones": list(map(lambda zone: zone.name, m.zones)), 
                 })
+                
+        if args.subcommand == "mode":
+            OUTPUT = rc.setpowermode(PowerMode[args.mode])
         
     else:
         exiterror("Subcommand not specifed.", args_cloud)

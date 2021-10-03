@@ -1,3 +1,4 @@
+from enum import Enum
 
 BatteryStatus = {
     1: "Dead",
@@ -24,6 +25,11 @@ RobotStates = {
     13: "Manual Steering",
     14: "Firmware Upgrade"
 }
+
+class PowerMode(Enum):
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
 
 PowerModes = {
     1: "Low",

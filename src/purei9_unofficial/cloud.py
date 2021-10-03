@@ -11,7 +11,7 @@ import websocket
 import requests
 import requests.auth
 
-from .common import AbstractRobot, RobotStates, BatteryStatus
+from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode
 
 logger = logging.getLogger(__name__)
 
@@ -87,8 +87,25 @@ class CloudRobot(AbstractRobot):
     def getlocalpw(self):
         return self._getinfo()["LocalRobotPassword"]
 
-    def isecomode(self):
-        return self._getinfo()["EcoMode"]
+    def getpowermode(self):
+        
+        i = self._getinfo()
+        
+        powermode = i["PowerMode"] if "PowerMode" in i else None
+        isecomode = i["EcoMode"] if "EcoMode" in i else None
+        
+        if powermode is not None:
+            powermode = PowerMode(powermode)
+        
+        elif isecomode is not None:
+            if isecomode:
+                powermode = PowerMode.LOW
+            else:
+                powermode = PowerMode.MEDIUM
+        else:
+            powermode = PowerMode.MEDIUM
+            
+        return powermode
     
     def startclean(self):
         return self._sendCleanCommand(1)
@@ -102,8 +119,27 @@ class CloudRobot(AbstractRobot):
     def stopclean(self):
         return self._sendCleanCommand(5)
 
-    def setecomode(self, ecomode):
-        return self._sendCommand({"EcoMode": ecomode})
+    def setpowermode(self, mode):
+        
+        i = self._getinfo()
+        
+        powermode = i["PowerMode"] if "PowerMode" in i else None
+        isecomode = i["EcoMode"] if "EcoMode" in i else None
+        
+        if powermode is not None:
+            self._sendCommand({"PowerMode": mode.value})
+            
+        elif isecomode is not None:
+            if mode == PowerMode.LOW:
+                self._sendCommand({"EcoMode": True})
+            elif mode == PowerMode.MEDIUM:
+                self._sendCommand({"EcoMode": False})
+            else:
+                raise Exception("Robot does not support " + str(mode))
+        else:
+            raise Exception("Robot does not support setting powermode")
+        
+        return None
     
     def getCleaningSessions(self, nextptr=None):
         
