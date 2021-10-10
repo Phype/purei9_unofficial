@@ -37,28 +37,35 @@ def do_http(method, url, retries=2, **kwargs):
             logger.error("Giving up due to no left retries. Wrong credentials?")
             raise r
         
-def cached_data(func, maxage=5):
-    @functools.wraps(func)
-    def self(*args, **kwargs):
-        if self.data != None and time.time() - self.date < self.maxage:
-            return self.data
-        else:
-            self.data = func(*args, **kwargs)
-            self.date = time.time()
-            return self.data
-    self.data = None
-    self.date = time.time()
-    self.maxage = maxage
-    return self
+class CachedData():
+    
+    def __init__(self, maxage=5):
+        self._mark_changed()
+        self._cache_maxage = maxage
 
-class CloudRobot(AbstractRobot):
+    def _mark_changed(self):
+        self._cache_data = None
+        self._cache_time = time.time()
+        
+    def _getinfo(self):
+        if self._cache_data != None and time.time() - self._cache_time < self._cache_maxage:
+            return self._cache_data
+        else:
+            self._cache_data = self._getinfo_inner()
+            self._cache_time = time.time()
+            return self._cache_data
+        
+###
+
+class CloudRobot(AbstractRobot, CachedData):
     
     def __init__(self, cloudclient, id):
+        CachedData.__init__(self)
+        
         self.cloudclient = cloudclient
         self.id          = id
     
-    @cached_data
-    def _getinfo(self):
+    def _getinfo_inner(self):
         r = do_http("POST", self.cloudclient.apiurl + "/robots/AppUpdate", auth=self.cloudclient.httpauth, json={"RobotID": self.id, "Email": self.cloudclient.credentials["Email"], "AccountPassword": self.cloudclient.credentials["AccountPassword"]})
         return r.json()
         
@@ -112,7 +119,7 @@ class CloudRobot(AbstractRobot):
     
     def gohome(self):
         return self._sendCleanCommand(3)
-    
+
     def pauseclean(self):
         return self._sendCleanCommand(4)
     
@@ -198,6 +205,7 @@ class CloudRobot(AbstractRobot):
 
             return True
         finally:
+            self._mark_changed()
             ws.close()
         
     def getMaps(self):
@@ -288,14 +296,15 @@ class CloudZone:
 
 ###
 
-class CloudRobotv2(AbstractRobot):
+class CloudRobotv2(AbstractRobot, CachedData):
     
     def __init__(self, cloudclient, id):
+        CachedData.__init__(self)
+        
         self.cloudclient = cloudclient
         self.id          = id
     
-    @cached_data
-    def _getinfo(self):
+    def _getinfo_inner(self):
         r = do_http("GET", self.cloudclient.apiurl + "/Appliances/" + self.id, headers=self.cloudclient._getHeaders())
         return r.json()["twin"]
     
@@ -390,6 +399,7 @@ class CloudRobotv2(AbstractRobot):
         # play|stop|home
         # curl -v https://api.delta.electrolux.com/api/Appliances/900277283814002391100106/Commands -X PUT --header "Content-Type: application/json" --header "Authorization: Bearer $TOKEN2" --data "{\"CleaningCommand\":\"home\"}" --http1.1 | jq -C .
         r = do_http("PUT", self.cloudclient.apiurl + "/Appliances/" + self.id + "/Commands", headers=self.cloudclient._getHeaders(), json={"CleaningCommand": command})
+        self._mark_changed()
 
 class CloudClientv2:
     
