@@ -172,10 +172,10 @@ class CloudRobot(AbstractRobot, CachedData):
         
         return list(map(lambda x: CloudMap(self, x), r.json()))
     
-    def cleanZones(self, mapId, zoneIds, powerMode=None):
+    def cleanZones(self, mapId, zoneIds, powerModes=None):
         
-        if powerMode != None:
-            self._sendCommand({"CustomPlay": { "PersistentMapId": mapId, "ZoneIds": list(zoneIds), "PowerModes": [powerMode.value] * len(zoneIds) }})
+        if powerModes != None:
+            self._sendCommand({"CustomPlay": { "PersistentMapId": mapId, "ZoneIds": list(zoneIds), "PowerModes": list(map(lambda pm: pm.value, powerModes)) }})
         else:
             self._sendCommand({"CustomPlay": { "PersistentMapId": mapId, "ZoneIds": list(zoneIds) }})
 

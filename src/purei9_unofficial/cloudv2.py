@@ -82,10 +82,10 @@ class CloudRobot(AbstractRobot, CachedData):
         
         return []
     
-    def cleanZones(self, mapId, zoneIds, powerMode=None):
+    def cleanZones(self, mapId, zoneIds, powerModes=None):
         
-        if powerMode != None:
-            zones = list(map(lambda zoneId: {"ZoneId": zoneId, "PowerMode": powerMode.value}, zoneIds))
+        if powerModes != None:
+            zones = list(map(lambda x: {"ZoneId": x[0], "PowerMode": x[1].value}, zip(zoneIds, powerModes)))
         else:
             zones = list(map(lambda zoneId: {"ZoneId": zoneId}, zoneIds))
         
