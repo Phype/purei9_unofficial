@@ -11,7 +11,7 @@ import websocket
 import requests
 import requests.auth
 
-from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode
+from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, ZoneType
 from .util import do_http, CachedData
 
 logger = logging.getLogger(__name__)
@@ -215,22 +215,8 @@ class CloudMap:
         self.info        = None
         self.image       = None
         
-        # self._get()
-        
-    def getImage2(self):
-        r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.robot.id + "/interactivemaps/" + self.id + "/" + self.interactiveid, auth=self.cloudclient.httpauth)
-        
-        js = r.json()
-        
-        # image = base64.b64decode(js["PngImage"])
-        # del js["PngImage"]
-        # self.info = js
-        
-        return js
-        
     def getImage(self):
-        r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.robot.id + "/interactivemaps/" + self.id, auth=self.cloudclient.httpauth)
-        
+        r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.robot.id + "/interactivemaps/" + self.id, auth=self.cloudclient.httpauth)        
         js = r.json()
         
         # image = base64.b64decode(js["PngImage"])
@@ -248,7 +234,7 @@ class CloudZone:
         self.id           = js["Id"]
         
         self.name         = js["Name"]
-        self.type         = js["ZoneType"]
+        self.type         = ZoneType(js["ZoneType"])
         self.roomcategory = js["RoomCategory"]
         
         # self._get()

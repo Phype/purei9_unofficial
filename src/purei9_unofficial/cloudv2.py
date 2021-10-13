@@ -11,7 +11,7 @@ import websocket
 import requests
 import requests.auth
 
-from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode
+from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, ZoneType
 from .util import do_http, CachedData
 
 logger = logging.getLogger(__name__)
@@ -240,7 +240,6 @@ class CloudZone:
         self.id           = js["id"]
         
         self.name         = js["name"]
-        self.type         = None
+        self.type         = ZoneType[js["zoneType"]]
         self.roomcategory = js["roomCategory"]
-        
-        # self._get()
+

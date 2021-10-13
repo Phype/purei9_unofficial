@@ -31,11 +31,9 @@ class PowerMode(Enum):
     MEDIUM = 2
     HIGH = 3
 
-PowerModes = {
-    1: "Low",
-    2: "Medium",
-    3: "High",
-}
+class ZoneType(Enum):
+    clean = 0
+    avoid = 1
 
 class AbstractRobot:
     
