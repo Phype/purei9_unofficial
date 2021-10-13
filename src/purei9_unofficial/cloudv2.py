@@ -112,13 +112,33 @@ class CloudRobot(AbstractRobot, CachedData):
     
     def getpowermode(self):
         return None
+    
+    def getMaps(self):
+        
+        r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.id + "/interactivemaps", headers=self.cloudclient._getHeaders())
+        
+        return list(map(lambda x: CloudMap(self, x), r.json()))
+        
+        return []
+    
+    def cleanZones(self, mapId, zoneIds, powerMode=None):
+        
+        if powerMode != None:
+            zones = list(map(lambda zoneId: {"ZoneId": zoneId, "PowerMode": powerMode.value}, zoneIds))
+        else:
+            zones = list(map(lambda zoneId: {"ZoneId": zoneId}, zoneIds))
+        
+        self._sendCommand({"CustomPlay": { "PersistentMapId": mapId, "Zones": zones }})
         
     ###
     
     def _sendCleanCommand(self, command):
+        self._sendCommand({"CleaningCommand": command})
+    
+    def _sendCommand(self, command):
         # play|stop|home
         # curl -v https://api.delta.electrolux.com/api/Appliances/900277283814002391100106/Commands -X PUT --header "Content-Type: application/json" --header "Authorization: Bearer $TOKEN2" --data "{\"CleaningCommand\":\"home\"}" --http1.1 | jq -C .
-        r = do_http("PUT", self.cloudclient.apiurl + "/Appliances/" + self.id + "/Commands", headers=self.cloudclient._getHeaders(), json={"CleaningCommand": command})
+        r = do_http("PUT", self.cloudclient.apiurl + "/Appliances/" + self.id + "/Commands", headers=self.cloudclient._getHeaders(), json=command)
         self._mark_changed()
 
 class CloudClient:
@@ -154,7 +174,6 @@ class CloudClient:
             
         else:
             self.token = None
-            
         
     def _getHeaders(self):
         
@@ -191,3 +210,37 @@ class CloudClient:
                 robots.append(CloudRobot(self, appliance_id))
         
         return robots
+
+class CloudMap:
+    
+    def __init__(self, cloudrobot, js):
+        
+        self.cloudclient = cloudrobot.cloudclient
+        self.robot       = cloudrobot
+        self.id          = js["id"]
+        self.interactiveid = js["interactiveId"]
+        
+        self.name        = js["name"]
+        self.zones       = list(map(lambda x: CloudZone(self, x), js["zones"]))
+        
+        self.info        = None
+        self.image       = None
+        
+        # self._get()
+        
+    def getImage(self):
+        return None
+    
+class CloudZone:
+    
+    def __init__(self, cloudmap, js):
+        
+        self.cloudclient  = cloudmap.cloudclient
+        self.map          = cloudmap
+        self.id           = js["id"]
+        
+        self.name         = js["name"]
+        self.type         = None
+        self.roomcategory = js["roomCategory"]
+        
+        # self._get()

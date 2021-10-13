@@ -252,5 +252,3 @@ class CloudZone:
         self.roomcategory = js["RoomCategory"]
         
         # self._get()
-
-###

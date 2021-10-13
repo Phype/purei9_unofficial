@@ -58,6 +58,11 @@ cmds_cloud_stop.add_argument("-r", "--robotid", type=str, help='ID of robot.', r
 cmds_cloud_maps = cmds_cloud.add_parser('maps', help='List maps and zones (experimental).')
 cmds_cloud_maps.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
 
+cmds_cloud_cleanzone = cmds_cloud.add_parser('cleanzone', help='Clean a specific zone.')
+cmds_cloud_cleanzone.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
+cmds_cloud_cleanzone.add_argument("--mapid", type=str, help='Persisten Map id.', required=True)
+cmds_cloud_cleanzone.add_argument("--zoneid", type=str, help='Persisten Zone id.', required=True)
+
 cmds_cloud_history = cmds_cloud.add_parser('history', help='List history (experimental).')
 cmds_cloud_history.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
 
@@ -127,7 +132,7 @@ if args.command == "cloud":
         if credentialstore.cloud_email == None and credentialstore.cloud_token == None:
             exiterror("No crentials supplied.", args_cloud)
         
-        client = cloudv2.CloudClientv2(username=credentialstore.cloud_email, password=credentialstore.cloud_passwort, token=credentialstore.cloud_token)
+        client = cloudv2.CloudClient(username=credentialstore.cloud_email, password=credentialstore.cloud_passwort, token=credentialstore.cloud_token)
         
         client.tryLogin()
         
@@ -149,7 +154,7 @@ if args.command == "cloud":
                 "powermode": rc.getpowermode().name if args.apiversion == 1 else None
             }, robots))
         
-    elif args.subcommand in ["start", "home", "pause", "stop", "maps", "history", "mode"]:
+    elif args.subcommand in ["start", "home", "pause", "stop", "maps", "history", "mode", "cleanzone"]:
         if args.robotid == None:
             exiterror("Requires robotid.", args_cloud)
         
@@ -193,11 +198,13 @@ if args.command == "cloud":
             for m in rc.getMaps():
                 
                 js = m.getImage()
-                if args.output == "table":
-                    from .imageascii import image_json_2_ascii
-                    image = image_json_2_ascii(js)
-                else:
-                    image = js["PngImage"]
+                image = None
+                if js:
+                    if args.output == "table":
+                        from .imageascii import image_json_2_ascii
+                        image = image_json_2_ascii(js)
+                    else:
+                        image = js["PngImage"]
                 
                 OUTPUT.append({
                     "image": image,
@@ -205,6 +212,9 @@ if args.command == "cloud":
                     "name": m.name, 
                     "zones": list(map(lambda zone: zone.name, m.zones)), 
                 })
+        
+        if args.subcommand == "cleanzone":
+            rc.cleanZones(args.mapid, [args.zoneid])
                 
         if args.subcommand == "mode":
             OUTPUT = rc.setpowermode(PowerMode[args.mode])
