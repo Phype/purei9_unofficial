@@ -16,6 +16,6 @@ Currently implemented functions
 | Get history      |      –      |     (✓)     |             |
 
 ✓: works  
-(✓): works, but needs refactoring for cross-API support
+(✓): works, but needs refactoring for cross-API support  
 –: impossible  
 <sup>1</sup>: Pausing over local interfaces actually toggles between play/pause  
