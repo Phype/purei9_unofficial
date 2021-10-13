@@ -4,9 +4,11 @@ import argparse
 import logging
 
 from .local import RobotClient, find_robots
-from .cloud import CloudClient, CloudClientv2
 from .credentialstore import CredentialStore, CREDENTIAL_STORE_PATH
 from .common import PowerMode
+
+from . import cloud
+from . import cloudv2
 
 # Setup logging
 root = logging.getLogger()
@@ -118,14 +120,14 @@ if args.command == "cloud":
         if credentialstore.cloud_email == None:
             exiterror("No crentials supplied.", args_cloud)
         
-        client = CloudClient(credentialstore.cloud_email, credentialstore.cloud_passwort)
+        client = cloud.CloudClient(credentialstore.cloud_email, credentialstore.cloud_passwort)
         credentialstore.save()
         
     elif args.apiversion == 2:
         if credentialstore.cloud_email == None and credentialstore.cloud_token == None:
             exiterror("No crentials supplied.", args_cloud)
         
-        client = CloudClientv2(username=credentialstore.cloud_email, password=credentialstore.cloud_passwort, token=credentialstore.cloud_token)
+        client = cloudv2.CloudClientv2(username=credentialstore.cloud_email, password=credentialstore.cloud_passwort, token=credentialstore.cloud_token)
         
         client.tryLogin()
         

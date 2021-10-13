@@ -4,7 +4,7 @@ import time
 
 from .util import load_secrets
 
-from .. import cloud
+from ..cloudv2 import CloudClient
 from .. import common
 
 SECRETS  = load_secrets()
@@ -16,7 +16,7 @@ LOCALPW  = SECRETS["local"]["localpassword"]
 class TestCloud(unittest.TestCase):
 
     def test_01(self):
-        cc = cloud.CloudClientv2(USERNAME, PASSWORD)
+        cc = CloudClient(USERNAME, PASSWORD)
         cc.tryLogin()
         
         ###
@@ -25,7 +25,7 @@ class TestCloud(unittest.TestCase):
         
         token = cc.gettoken()
         
-        cc2 = cloud.CloudClientv2(token=token)
+        cc2 = CloudClient(token=token)
         cc2.tryLogin()
         
         ###
