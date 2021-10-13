@@ -11,8 +11,7 @@ Currently implemented functions
 | Clean zone       |             |             |      ✓      |
 | Change powermode |      ✓      |      ✓      |             |
 | List wifis       |      ✓      |      –      |      –      |
-| List maps        |      –      |      ✓      |      ✓      |
-| List zones       |      –      |      ✓      |      ✓      |
+| List maps/zones  |      –      |      ✓      |      ✓      |
 | Map/zone images  |      –      |      ✓      |             |
 | Get history      |      –      |      ✓      |             |
 
