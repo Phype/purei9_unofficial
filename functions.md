@@ -8,7 +8,7 @@ Currently implemented functions
 | Send home        |      ✓      |      ✓      |      ✓      |
 | Stop  robot      |      ✓      |      ✓      |      ✓      |
 | Pause robot      |✓<sup>1</sup>|      ✓      |      ✓      |
-| Clean zone       |             |             |      ✓      |
+| Clean zone       |             |      ✓      |      ✓      |
 | Change powermode |      ✓      |      ✓      |             |
 | List wifis       |      ✓      |      –      |      –      |
 | List maps/zones  |      –      |      ✓      |      ✓      |

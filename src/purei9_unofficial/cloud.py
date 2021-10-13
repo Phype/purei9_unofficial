@@ -27,6 +27,32 @@ class CloudRobot(AbstractRobot, CachedData):
     def _getinfo_inner(self):
         r = do_http("POST", self.cloudclient.apiurl + "/robots/AppUpdate", auth=self.cloudclient.httpauth, json={"RobotID": self.id, "Email": self.cloudclient.credentials["Email"], "AccountPassword": self.cloudclient.credentials["AccountPassword"]})
         return r.json()
+    
+    def _sendCleanCommand(self, command):
+        return self._sendCommand({"CleaningCommand": command})
+
+    def _sendCommand(self, body):
+
+        headers = self.cloudclient.credentials.copy()
+        headers["RobotId"] = self.id
+
+        ws = websocket.WebSocket()
+
+        try:
+            ws.connect("wss://mobile.rvccloud.electrolux.com/api/v1/websocket/AppUser", header = headers)
+            ws.send(json.dumps({
+                "Type": 1, # 1 Request, 2 Response, 3 Event
+                "Command": "AppUpdate",
+                "Body": body
+            }))
+            logger.debug(ws.recv())
+
+            return True
+        finally:
+            self._mark_changed()
+            ws.close()
+            
+    ###
         
     def getstatus(self):
         return RobotStates[self._getinfo()["RobotStatus"]]
@@ -140,37 +166,18 @@ class CloudRobot(AbstractRobot, CachedData):
             items += self.getCleaningSessions(nextptr=js["Next"])
 
         return items
-    
-    ###
-    
-    def _sendCleanCommand(self, command):
-        return self._sendCommand({"CleaningCommand": command})
-
-    def _sendCommand(self, body):
-
-        headers = self.cloudclient.credentials.copy()
-        headers["RobotId"] = self.id
-
-        ws = websocket.WebSocket()
-
-        try:
-            ws.connect("wss://mobile.rvccloud.electrolux.com/api/v1/websocket/AppUser", header = headers)
-            ws.send(json.dumps({
-                "Type": 1, # 1 Request, 2 Response, 3 Event
-                "Command": "AppUpdate",
-                "Body": body
-            }))
-            ws.recv()
-
-            return True
-        finally:
-            self._mark_changed()
-            ws.close()
         
     def getMaps(self):
         r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.id + "/interactivemaps", auth=self.cloudclient.httpauth)
         
         return list(map(lambda x: CloudMap(self, x), r.json()))
+    
+    def cleanZones(self, mapId, zoneIds, powerMode=None):
+        
+        if powerMode != None:
+            self._sendCommand({"CustomPlay": { "PersistentMapId": mapId, "ZoneIds": list(zoneIds), "PowerModes": [powerMode.value] * len(zoneIds) }})
+        else:
+            self._sendCommand({"CustomPlay": { "PersistentMapId": mapId, "ZoneIds": list(zoneIds) }})
 
 class CloudClient:
     

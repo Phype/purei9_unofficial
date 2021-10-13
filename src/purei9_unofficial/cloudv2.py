@@ -28,45 +28,6 @@ class CloudRobot(AbstractRobot, CachedData):
         r = do_http("GET", self.cloudclient.apiurl + "/Appliances/" + self.id, headers=self.cloudclient._getHeaders())
         return r.json()["twin"]
     
-    def _getall(self):
-        r = do_http("GET", self.cloudclient.apiurl + "/Domains/Appliances/" + self.id, headers=self.cloudclient._getHeaders())
-        
-        """
-        url = self.cloudclient.apiurl + "/Domains/Appliances/" + self.id + "/Certificate"
-        log("<", url)
-        r = requests.get(url, headers=self.cloudclient._getHeaders())
-        r.raise_for_status()
-        log(">", json.dumps(r.json(), indent=2))
-        
-        url = self.cloudclient.apiurl + "/Hashes/Appliances/" + self.id
-        log("<", url)
-        r = requests.get(url, headers=self.cloudclient._getHeaders())
-        r.raise_for_status()
-        log(">", json.dumps(r.json(), indent=2))
-        
-        #url = self.cloudclient.apiurl + "/oaq/appliances/" + self.id
-        #log("<", url)
-        #r = requests.get(url, headers=self.cloudclient._getHeaders())
-        #r.raise_for_status()
-        #log(">", json.dumps(r.json(), indent=2))
-        
-        #url = self.cloudclient.apiurl + "/geo/appliances/" + self.id
-        #log("<", url)
-        #r = requests.get(url, headers=self.cloudclient._getHeaders())
-        #r.raise_for_status()
-        #log(">", json.dumps(r.json(), indent=2))
-        
-        url = self.cloudclient.apiurl + "/robots/" + self.id + "/LifeTime"
-        log("<", url)
-        r = requests.get(url, headers=self.cloudclient._getHeaders())
-        r.raise_for_status()
-        log(">", json.dumps(r.json(), indent=2))
-        """
-        
-        
-        
-    ###
-    
     def getstatus(self):
         status = self._getinfo()["properties"]["reported"]["robotStatus"]
         return RobotStates[status]
@@ -191,12 +152,9 @@ class CloudClient:
         self.getRobots()
         
     def getRobot(self, id):
-        for r in self.getRobots():
-            if r.getid() == id:
-                return r
+        return CloudRobot(self, id)
         
     def getRobots(self):
-        #curl -v https://api.delta.electrolux.com/api/Domains/Appliances -X GET --header "Content-Type: application/json" --header "Authorization: Bearer $TOKEN2" --http1.1 | jq -C
         robots = []
         r = do_http("GET", self.apiurl + "/Domains/Appliances", headers=self._getHeaders())
         

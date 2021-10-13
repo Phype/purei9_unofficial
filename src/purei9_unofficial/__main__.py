@@ -134,14 +134,9 @@ if args.command == "cloud":
         
         client = cloudv2.CloudClient(username=credentialstore.cloud_email, password=credentialstore.cloud_passwort, token=credentialstore.cloud_token)
         
-        client.tryLogin()
-        
-        credentialstore.cloud_token = client.gettoken()
-        credentialstore.save()
-        
-    robots = client.getRobots()
-        
     if args.subcommand == "status":
+        
+        robots = client.getRobots()
         
         OUTPUT = list(map(lambda rc: {
                 "id": rc.getid(),
@@ -221,6 +216,11 @@ if args.command == "cloud":
         
     else:
         exiterror("Subcommand not specifed.", args_cloud)
+            
+    if args.apiversion == 2:
+        credentialstore.cloud_token = client.gettoken()
+    
+    credentialstore.save()
 
 elif args.command == "local":
     if args.subcommand == "find":
