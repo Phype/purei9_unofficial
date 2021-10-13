@@ -12,9 +12,10 @@ Currently implemented functions
 | Change powermode |      ✓      |      ✓      |             |
 | List wifis       |      ✓      |      –      |      –      |
 | List maps/zones  |      –      |      ✓      |      ✓      |
-| Map/zone images  |      –      |      ✓      |             |
-| Get history      |      –      |      ✓      |             |
+| Map/zone images  |      –      |     (✓)     |             |
+| Get history      |      –      |     (✓)     |             |
 
 ✓: works  
+(✓): works, but needs refactoring for cross-API support  
 –: impossible  
 <sup>1</sup>: Pausing over local interfaces actually toggles between play/pause  
