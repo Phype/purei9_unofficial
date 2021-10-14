@@ -9,7 +9,7 @@ from typing import List
 
 from .message import BinaryMessage
 
-from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode
+from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, capabilities2model
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +38,10 @@ class RobotClient(AbstractRobot):
         self.protocol_version = None
         
     ###
+    
+    def getmodel(self):
+        capabilities = self.getcapabilities()["Capabilities"]
+        return capabilities2model(capabilities)
     
     def getstatus(self) -> str:
         """Get the current state of the robot"""

@@ -76,3 +76,12 @@ class AbstractRobot:
     
     def isconnected(self):
         raise Exception("Not implemented")
+
+
+def capabilities2model(capabilities):
+	if ("PowerLevels" in capabilities) and not("EcoMode" in capabilities):
+		return "PUREi9.2"
+	elif not("PowerLevels" in capabilities) and ("EcoMode" in capabilities):
+		return "PUREi9"
+	else:
+		return "unknown"

@@ -11,7 +11,7 @@ import websocket
 import requests
 import requests.auth
 
-from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, ZoneType
+from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, ZoneType, capabilities2model
 from .util import do_http, CachedData
 
 logger = logging.getLogger(__name__)
@@ -53,6 +53,10 @@ class CloudRobot(AbstractRobot, CachedData):
             ws.close()
             
     ###
+    
+    def getmodel(self):
+        capabilities = self._getinfo()["RobotCapabilities"]["Capabilities"]
+        return capabilities2model(capabilities)
         
     def getstatus(self):
         return RobotStates[self._getinfo()["RobotStatus"]]

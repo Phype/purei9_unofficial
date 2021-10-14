@@ -140,6 +140,7 @@ if args.command == "cloud":
         
         OUTPUT = list(map(lambda rc: {
                 "id": rc.getid(),
+                "model": rc.getmodel(),
                 "name": rc.getname(),
                 "localpw": rc.getlocalpw(),
                 "connected": rc.isconnected(),
@@ -236,6 +237,7 @@ elif args.command == "local":
             if args.subcommand == "status":
                 OUTPUT = [{
                     "id": rc.getid(),
+                    "model": rc.getmodel(),
                     "name": rc.getname(),
                     "localpw": args.localpw,
                     "connected": rc.isconnected(),

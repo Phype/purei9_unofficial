@@ -11,7 +11,7 @@ import websocket
 import requests
 import requests.auth
 
-from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, ZoneType
+from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, ZoneType, capabilities2model
 from .util import do_http, CachedData
 
 logger = logging.getLogger(__name__)
@@ -26,10 +26,16 @@ class CloudRobot(AbstractRobot, CachedData):
     
     def _getinfo_inner(self):
         r = do_http("GET", self.cloudclient.apiurl + "/Appliances/" + self.id, headers=self.cloudclient._getHeaders())
-        return r.json()["twin"]
+        return r.json()
+    
+    def getmodel(self):
+        return self._getinfo()["applianceData"]["modelName"]
+    
+        capabilities = self._getinfo()["twin"]["properties"]["reported"]["capabilities"]
+        return capabilities2model(capabilities)
     
     def getstatus(self):
-        status = self._getinfo()["properties"]["reported"]["robotStatus"]
+        status = self._getinfo()["twin"]["properties"]["reported"]["robotStatus"]
         return RobotStates[status]
     
     def startclean(self):
@@ -54,19 +60,19 @@ class CloudRobot(AbstractRobot, CachedData):
     
     def getname(self) -> str:
         """Get the robot's name"""
-        return self._getinfo()["properties"]["reported"]["applianceName"]
+        return self._getinfo()["twin"]["properties"]["reported"]["applianceName"]
     
     def getfirmware(self) -> str:
         """Get robot's firmware version"""
-        return self._getinfo()["properties"]["reported"]["firmwareVersion"]
+        return self._getinfo()["twin"]["properties"]["reported"]["firmwareVersion"]
     
     def getbattery(self) -> str:
         """Get the current robot battery status"""
-        bat = self._getinfo()["properties"]["reported"]["batteryStatus"]
+        bat = self._getinfo()["twin"]["properties"]["reported"]["batteryStatus"]
         return BatteryStatus[bat]
     
     def isconnected(self) -> bool:
-        return self._getinfo()["connectionState"] == "Connected"
+        return self._getinfo()["twin"]["connectionState"] == "Connected"
     
     def getlocalpw(self):
         return None
