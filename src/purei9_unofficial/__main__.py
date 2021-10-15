@@ -46,6 +46,9 @@ cmds_cloud_status = cmds_cloud.add_parser('status', help='Get status of all robo
 cmds_cloud_start = cmds_cloud.add_parser('start', help='Tell a robot to start cleaning.')
 cmds_cloud_start.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
 
+cmds_cloud_spot = cmds_cloud.add_parser('spot', help='Tell the robot to do a spot clean.')
+cmds_cloud_spot.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
+
 cmds_cloud_home = cmds_cloud.add_parser('home', help='Tell a robot to go home.')
 cmds_cloud_home.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
 
@@ -85,6 +88,7 @@ cmds_local_find = cmds_local.add_parser('status', help='Get status of the robot.
 cmds_local_wifi = cmds_local.add_parser('wifi', help='Get available wifi networks for the robot.')
 cmds_local_start = cmds_local.add_parser('start', help='Tell the robot to start cleaning (note: toggles between play/pause).')
 cmds_local_home = cmds_local.add_parser('home', help='Tell the robot to go home.')
+cmds_local_home = cmds_local.add_parser('spot', help='Tell the robot to do a spot clean.')
 cmds_local_pause = cmds_local.add_parser('pause', help='Tell the robot to pause cleaning (note: toggles between play/pause).')
 cmds_local_stop = cmds_local.add_parser('stop', help='Tell the robot to stop cleaning.')
 
@@ -150,7 +154,7 @@ if args.command == "cloud":
                 "powermode": rc.getpowermode().name if args.apiversion == 1 else None
             }, robots))
         
-    elif args.subcommand in ["start", "home", "pause", "stop", "maps", "history", "mode", "cleanzone"]:
+    elif args.subcommand in ["start", "home", "pause", "stop", "maps", "history", "mode", "cleanzone", "spot"]:
         if args.robotid == None:
             exiterror("Requires robotid.", args_cloud)
         
@@ -158,6 +162,9 @@ if args.command == "cloud":
         
         if args.subcommand == "start":
             OUTPUT = rc.startclean()
+        
+        if args.subcommand == "spot":
+            OUTPUT = rc.spotclean()
         
         if args.subcommand == "home":
             OUTPUT = rc.gohome()
@@ -227,7 +234,7 @@ elif args.command == "local":
     if args.subcommand == "find":
         OUTPUT = list(map(lambda robot: {"address": robot.address, "id": robot.id, "name": robot.name}, find_robots()))
         
-    elif args.subcommand in ["status", "start", "pause", "stop", "home", "wifi", "mode"]:
+    elif args.subcommand in ["status", "start", "pause", "stop", "home", "wifi", "mode", "spot"]:
         if args.address == None or args.localpw == None:
             exiterror("Requires address and localpw.", args_local)
         else:
@@ -248,6 +255,8 @@ elif args.command == "local":
                 }]
             elif args.subcommand == "start":
                 OUTPUT = rc.startclean()
+            elif args.subcommand == "spot":
+                OUTPUT = rc.spotclean()
             elif args.subcommand == "home":
                 OUTPUT = rc.gohome()
             elif args.subcommand == "pause":

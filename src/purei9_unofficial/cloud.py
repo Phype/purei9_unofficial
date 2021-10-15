@@ -108,6 +108,9 @@ class CloudRobot(AbstractRobot, CachedData):
     
     def gohome(self):
         return self._sendCleanCommand(3)
+    
+    def spotclean(self):
+        return self._sendCleanCommand(2)
 
     def pauseclean(self):
         return self._sendCleanCommand(4)

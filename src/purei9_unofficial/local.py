@@ -52,6 +52,10 @@ class RobotClient(AbstractRobot):
         """Tell the Robot to start cleaning"""
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_STARTCLEAN, user1=RobotClient.CLEAN_PLAY))
         return True
+    
+    def spotclean(self) -> None:
+        pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_STARTCLEAN, user1=RobotClient.CLEAN_SPOT))
+        return True
         
     def gohome(self) -> None:
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_STARTCLEAN, user1=RobotClient.CLEAN_HOME))

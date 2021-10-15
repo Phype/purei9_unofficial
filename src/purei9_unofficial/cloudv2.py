@@ -42,6 +42,10 @@ class CloudRobot(AbstractRobot, CachedData):
         self._sendCleanCommand("play")
         return True
     
+    def spotclean(self):
+        self._sendCleanCommand("spot")
+        return True
+    
     def gohome(self):
         self._sendCleanCommand("home")
         return True
