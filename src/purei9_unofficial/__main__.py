@@ -179,17 +179,17 @@ if args.command == "cloud":
             OUTPUT = []
             
             i = 0
-            for sess in rc.getCleaningSessions():
+            for sess in map(lambda x: {"starttime": x.starttime.isoformat(), "duration": x.duration, "cleandearea": x.cleandearea, "imageurl": x.imageurl, "endstatus": x.endstatus}, rc.getCleaningSessions()):
                 
                 if args.output == "table":
                     from .imageascii import draw2shade
                     
                     try:
                         if i < 10:
-                            sess["image"] = draw2shade(sess["image"]) + "_"
+                            sess["imageurl"] = draw2shade(sess["imageurl"]) + "_"
                             i += 1
                         else:
-                            sess["image"] = "(not shown)"
+                            sess["imageurl"] = "(not shown)"
                     except:
                         pass
                 

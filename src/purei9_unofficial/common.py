@@ -34,6 +34,39 @@ class PowerMode(Enum):
 class ZoneType(Enum):
     clean = 0
     avoid = 1
+    
+class CleaningSessionResult(Enum):
+    unknown0 = 0
+    unknown1 = 1
+    unknown2 = 2
+    unknown3 = 3
+    endedNotFindingCharger = 4
+    unknown5 = 4
+    unknown6 = 5
+    unknown7 = 6
+    unknown8 = 7
+    cleaningFinishedSuccessfulInCharger = 9
+    cleaningFinishedSuccessfulInStartPose = 10
+    abortedByUser = 11
+    unknown12 = 12
+    unknown13 = 13
+    unknown14 = 14
+    unknown15 = 15
+    unknown16 = 16
+    unknown17 = 17
+
+class CleaningSession:
+    
+    def __init__(self, starttime, duration, cleandearea, endstatus=None, imageurl=None, mapid=None, error=None):
+        
+        self.starttime   = starttime    # datetime
+        self.duration    = duration     # duration in seconds
+        self.cleandearea = cleandearea  # area in m2
+        
+        self.endstatus   = endstatus    # end status (Needs an enum)
+        self.imageurl    = imageurl     # url of image if available
+        self.mapid       = mapid        # map id
+        self.error       = error        # String(?)
 
 class AbstractRobot:
     

@@ -4,6 +4,7 @@ import json
 import time
 import functools
 import logging
+import datetime
 
 from typing import List
 
@@ -11,7 +12,7 @@ import websocket
 import requests
 import requests.auth
 
-from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, ZoneType, capabilities2model
+from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, ZoneType, capabilities2model, CleaningSession
 from .util import do_http, CachedData
 
 logger = logging.getLogger(__name__)
@@ -157,20 +158,21 @@ class CloudRobot(AbstractRobot, CachedData):
         js = r.json()
         
         items = list(map(
-            lambda x: {
-                "timestamp": x["TimeStamp"],
-                "cleaned_area": x["CleanedArea"],
-                "image": "https://mobile.rvccloud.electrolux.com/image/map/png/" + x["CleaningSession"]["MapImageUrl"] if x["CleaningSession"]["MapImageUrl"] else None,
-                "map": x["CleaningSession"]["PersistentMapId"],
-                "status": x["CleaningSession"]["Completion"],
-                "usererror": x["CleaningSession"]["RobotUserError"],
-                "internalerror": x["CleaningSession"]["RobotInternalError"],
-            },
+            lambda x: CleaningSession(
+                starttime=datetime.datetime.fromisoformat(x["CleaningSession"]["StartTime"]),
+                duration=x["CleaningSession"]["CleaningDuration"] / 10000000.0, 
+                cleandearea=x["CleanedArea"],
+                imageurl="https://mobile.rvccloud.electrolux.com/image/map/png/" + x["CleaningSession"]["MapImageUrl"] if x["CleaningSession"]["MapImageUrl"] else None,    
+                #"map": x["CleaningSession"]["PersistentMapId"],
+                #endstatus=x["CleaningSession"]["Completion"],
+                #"usererror": x["CleaningSession"]["RobotUserError"],
+                #"internalerror": x["CleaningSession"]["RobotInternalError"],
+            ),
             filter(lambda x: x["CleaningSession"] != None, js["Items"])
         ))
             
-        if js["Next"] != None:
-            items += self.getCleaningSessions(nextptr=js["Next"])
+        #if js["Next"] != None:
+        #    items += self.getCleaningSessions(nextptr=js["Next"])
 
         return items
         
@@ -185,6 +187,8 @@ class CloudRobot(AbstractRobot, CachedData):
             self._sendCommand({"CustomPlay": { "PersistentMapId": mapId, "ZoneIds": list(zoneIds), "PowerModes": list(map(lambda pm: pm.value, powerModes)) }})
         else:
             self._sendCommand({"CustomPlay": { "PersistentMapId": mapId, "ZoneIds": list(zoneIds) }})
+
+        
 
 class CloudClient:
     

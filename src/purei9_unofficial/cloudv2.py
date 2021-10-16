@@ -4,6 +4,7 @@ import json
 import time
 import functools
 import logging
+import datetime
 
 from typing import List
 
@@ -11,7 +12,7 @@ import websocket
 import requests
 import requests.auth
 
-from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, ZoneType, capabilities2model
+from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, ZoneType, capabilities2model, CleaningSession
 from .util import do_http, CachedData
 
 logger = logging.getLogger(__name__)
@@ -89,8 +90,6 @@ class CloudRobot(AbstractRobot, CachedData):
         r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.id + "/interactivemaps", headers=self.cloudclient._getHeaders())
         
         return list(map(lambda x: CloudMap(self, x), r.json()))
-        
-        return []
     
     def cleanZones(self, mapId, zoneIds, powerModes=None):
         
@@ -100,6 +99,17 @@ class CloudRobot(AbstractRobot, CachedData):
             zones = list(map(lambda zoneId: {"ZoneId": zoneId}, zoneIds))
         
         self._sendCommand({"CustomPlay": { "PersistentMapId": mapId, "Zones": zones }})
+    
+    def getCleaningSessions(self):
+        
+        r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.id + "/history", headers=self.cloudclient._getHeaders())
+        
+        return list(map(lambda item: CleaningSession(
+                starttime=datetime.datetime.fromisoformat(item["cleaningSession"]["startTime"]), 
+                duration=item["cleaningSession"]["cleaningDuration"] / 10000000.0, 
+                cleandearea=item["cleanedArea"], 
+                #endstatus=item["cleaningSession"]["completion"]
+            ), r.json()))
         
     ###
     
