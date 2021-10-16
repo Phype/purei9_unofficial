@@ -13,7 +13,7 @@ Currently implemented functions
 | List wifis       |      ✓      |      –      |      –      |
 | List maps/zones  |      –      |      ✓      |      ✓      |
 | Map/zone images  |      –      |     (✓)     |             |
-| Get history      |      –      |     (✓)     |             |
+| Get history      |      –      |      ✓      |      ✓      |
 
 ✓: works  
 (✓): works, but needs refactoring for cross-API support  
