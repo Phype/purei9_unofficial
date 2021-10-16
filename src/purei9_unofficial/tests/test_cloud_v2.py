@@ -43,6 +43,13 @@ class TestCloud(unittest.TestCase):
         rc.getname()
         rc.getfirmware()
         rc.getbattery()
+        
+        ###
+        # Sessions
+        ###
+        
+        for session in rc.getCleaningSessions():
+            assert type(session.starttime) == datetime.datetime
 
 if __name__ == '__main__':
     unittest.main()
