@@ -30,8 +30,6 @@ class CloudRobot(AbstractRobot, CachedData):
         return r.json()
     
     def getmodel(self):
-        return self._getinfo()["applianceData"]["modelName"]
-    
         capabilities = self._getinfo()["twin"]["properties"]["reported"]["capabilities"]
         return capabilities2model(capabilities)
     
@@ -82,7 +80,57 @@ class CloudRobot(AbstractRobot, CachedData):
     def getlocalpw(self):
         return None
     
+    def getsupportedpowermodes(self):
+        
+        capabilities = self._getinfo()["twin"]["properties"]["reported"]["capabilities"]
+        if "PowerLevels" in capabilities:
+            return [PowerMode.LOW, PowerMode.MEDIUM, PowerMode.HIGH]
+        elif "EcoMode" in capabilities:
+            return [PowerMode.MEDIUM, PowerMode.HIGH]
+        else:
+            return [PowerMode.MEDIUM]
+    
     def getpowermode(self):
+        
+        i = self._getinfo()["twin"]["properties"]["reported"]
+        
+        powermode = i["powerMode"] if "powerMode" in i else None
+        isecomode = i["ecoMode"] if "ecoMode" in i else None
+        
+        if powermode is not None:
+            powermode = PowerMode(powermode)
+        
+        elif isecomode is not None:
+            if isecomode:
+                powermode = PowerMode.MEDIUM
+            else:
+                powermode = PowerMode.HIGH
+        else:
+            powermode = PowerMode.MEDIUM
+            
+        return powermode
+    
+
+    def setpowermode(self, mode):
+        
+        i = self._getinfo()["twin"]["properties"]["reported"]
+        
+        powermode = i["powerMode"] if "powerMode" in i else None
+        isecomode = i["ecoMode"] if "ecoMode" in i else None
+        
+        if powermode is not None:
+            self._update({"powerMode": mode.value})
+            
+        elif isecomode is not None:
+            if mode == PowerMode.MEDIUM:
+                self._update({"ecoMode": True})
+            elif mode == PowerMode.HIGH:
+                self._update({"ecoMode": False})
+            else:
+                raise Exception("Robot does not support " + str(mode))
+        else:
+            raise Exception("Robot does not support setting powermode")
+        
         return None
     
     def getMaps(self):
@@ -120,6 +168,10 @@ class CloudRobot(AbstractRobot, CachedData):
         # play|stop|home
         # curl -v https://api.delta.electrolux.com/api/Appliances/900277283814002391100106/Commands -X PUT --header "Content-Type: application/json" --header "Authorization: Bearer $TOKEN2" --data "{\"CleaningCommand\":\"home\"}" --http1.1 | jq -C .
         r = do_http("PUT", self.cloudclient.apiurl + "/Appliances/" + self.id + "/Commands", headers=self.cloudclient._getHeaders(), json=command)
+        self._mark_changed()
+    
+    def _update(self, command):
+        r = do_http("PUT", self.cloudclient.apiurl + "/Appliances/" + self.id, headers=self.cloudclient._getHeaders(), json=command)
         self._mark_changed()
 
 class CloudClient:

@@ -104,6 +104,16 @@ class RobotClient(AbstractRobot):
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GET_CAPABILITIES_REQUEST))
         return json.loads(pkt.parsed)
     
+    def getsupportedpowermodes(self):
+        
+        capabilities = self.getcapabilities()["Capabilities"]
+        if "PowerLevels" in capabilities:
+            return [PowerMode.LOW, PowerMode.MEDIUM, PowerMode.HIGH]
+        elif "EcoMode" in capabilities:
+            return [PowerMode.MEDIUM, PowerMode.HIGH]
+        else:
+            return [PowerMode.MEDIUM]
+    
     def getpowermode(self) -> PowerMode:
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GET_POWER_MODE_REQUEST))
         return PowerMode(pkt.user1)

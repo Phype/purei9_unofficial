@@ -112,9 +112,14 @@ class AbstractRobot:
 
 
 def capabilities2model(capabilities):
-	if ("PowerLevels" in capabilities) and not("EcoMode" in capabilities):
-		return "PUREi9.2"
-	elif not("PowerLevels" in capabilities) and ("EcoMode" in capabilities):
-		return "PUREi9"
-	else:
-		return "unknown"
+    
+    capabilities = set(map(lambda x: x.lower(), capabilities.keys()))
+    
+    print(capabilities)
+    
+    if ("powerlevels" in capabilities) and not("ecomode" in capabilities):
+        return "PUREi9.2"
+    elif not("powerlevels" in capabilities) and ("ecomode" in capabilities):
+        return "PUREi9"
+    else:
+        return "unknown"

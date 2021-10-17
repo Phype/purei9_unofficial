@@ -151,7 +151,7 @@ if args.command == "cloud":
                 "status": rc.getstatus(),
                 "battery": rc.getbattery(),
                 "firmware": rc.getfirmware(),
-                "powermode": rc.getpowermode().name if args.apiversion == 1 else None
+                "powermode": rc.getpowermode().name
             }, robots))
         
     elif args.subcommand in ["start", "home", "pause", "stop", "maps", "history", "mode", "cleanzone", "spot"]:

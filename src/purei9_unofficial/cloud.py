@@ -83,6 +83,16 @@ class CloudRobot(AbstractRobot, CachedData):
     
     def getlocalpw(self):
         return self._getinfo()["LocalRobotPassword"]
+    
+    def getsupportedpowermodes(self):
+        
+        capabilities = self._getinfo()["RobotCapabilities"]["Capabilities"]
+        if "PowerLevels" in capabilities:
+            return [PowerMode.LOW, PowerMode.MEDIUM, PowerMode.HIGH]
+        elif "EcoMode" in capabilities:
+            return [PowerMode.MEDIUM, PowerMode.HIGH]
+        else:
+            return [PowerMode.MEDIUM]
 
     def getpowermode(self):
         
