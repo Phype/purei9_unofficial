@@ -1,6 +1,7 @@
 import itertools
 import unittest
 import time
+import datetime
 
 from .util import load_secrets
 
@@ -50,6 +51,33 @@ class TestCloud(unittest.TestCase):
         
         for session in rc.getCleaningSessions():
             assert type(session.starttime) == datetime.datetime
+        
+        ###
+        # PowerMode
+        ###
+        
+        oldmode = rc.getpowermode()
+        
+        toset = common.PowerMode.HIGH
+        if oldmode == common.PowerMode.HIGH:
+            toset = common.PowerMode.MEDIUM
+        
+        rc.setpowermode(toset)
+        time.sleep(0.5)
+        
+        isset = rc.getpowermode()
+        
+        time.sleep(0.5)
+        rc.setpowermode(oldmode)
+        
+        self.assertEqual(isset, toset, "Powermode did not change")
+        
+        ###
+        # Maps
+        ###
+        
+        for m in rc.getMaps():
+            break
 
 if __name__ == '__main__':
     unittest.main()
