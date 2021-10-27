@@ -1,6 +1,7 @@
 import itertools
 import unittest
 import time
+import datetime
 
 from .util import load_secrets
 
@@ -40,7 +41,7 @@ class TestCloud(unittest.TestCase):
         ###
         
         for session in rc.getCleaningSessions():
-            self.assertIn("image", session)
+            assert type(session.starttime) == datetime.datetime
         
         ###
         # Maps

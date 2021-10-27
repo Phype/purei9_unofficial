@@ -11,11 +11,11 @@ Currently implemented functions
 | Stop  robot      |      ✓      |      ✓      |      ✓      |
 | Pause robot      |✓<sup>1</sup>|      ✓      |      ✓      |
 | Clean zone       |      –      |      ✓      |      ✓      |
-| Change powermode |      ✓      |      ✓      |             |
+| Change powermode |      ✓      |      ✓      |      ✓      |
 | List wifis       |      ✓      |      –      |      –      |
 | List maps/zones  |      –      |      ✓      |      ✓      |
 | Map/zone images  |      –      |     (✓)     |             |
-| Get history      |      –      |     (✓)     |             |
+| Get history      |      –      |      ✓      |      ✓      |
 
 ✓: works  
 (✓): works, but needs refactoring for cross-API support  

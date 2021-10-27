@@ -4,6 +4,7 @@ import json
 import time
 import functools
 import logging
+import datetime
 
 from typing import List
 
@@ -11,7 +12,7 @@ import websocket
 import requests
 import requests.auth
 
-from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, ZoneType, capabilities2model
+from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, ZoneType, capabilities2model, CleaningSession
 from .util import do_http, CachedData
 
 logger = logging.getLogger(__name__)
@@ -29,8 +30,6 @@ class CloudRobot(AbstractRobot, CachedData):
         return r.json()
     
     def getmodel(self):
-        return self._getinfo()["applianceData"]["modelName"]
-    
         capabilities = self._getinfo()["twin"]["properties"]["reported"]["capabilities"]
         return capabilities2model(capabilities)
     
@@ -40,6 +39,10 @@ class CloudRobot(AbstractRobot, CachedData):
     
     def startclean(self):
         self._sendCleanCommand("play")
+        return True
+    
+    def spotclean(self):
+        self._sendCleanCommand("spot")
         return True
     
     def gohome(self):
@@ -77,7 +80,57 @@ class CloudRobot(AbstractRobot, CachedData):
     def getlocalpw(self):
         return None
     
+    def getsupportedpowermodes(self):
+        
+        capabilities = self._getinfo()["twin"]["properties"]["reported"]["capabilities"]
+        if "PowerLevels" in capabilities:
+            return [PowerMode.LOW, PowerMode.MEDIUM, PowerMode.HIGH]
+        elif "EcoMode" in capabilities:
+            return [PowerMode.MEDIUM, PowerMode.HIGH]
+        else:
+            return [PowerMode.MEDIUM]
+    
     def getpowermode(self):
+        
+        i = self._getinfo()["twin"]["properties"]["reported"]
+        
+        powermode = i["powerMode"] if "powerMode" in i else None
+        isecomode = i["ecoMode"] if "ecoMode" in i else None
+        
+        if powermode is not None:
+            powermode = PowerMode(powermode)
+        
+        elif isecomode is not None:
+            if isecomode:
+                powermode = PowerMode.MEDIUM
+            else:
+                powermode = PowerMode.HIGH
+        else:
+            powermode = PowerMode.MEDIUM
+            
+        return powermode
+    
+
+    def setpowermode(self, mode):
+        
+        i = self._getinfo()["twin"]["properties"]["reported"]
+        
+        powermode = i["powerMode"] if "powerMode" in i else None
+        isecomode = i["ecoMode"] if "ecoMode" in i else None
+        
+        if powermode is not None:
+            self._update({"powerMode": mode.value})
+            
+        elif isecomode is not None:
+            if mode == PowerMode.MEDIUM:
+                self._update({"ecoMode": True})
+            elif mode == PowerMode.HIGH:
+                self._update({"ecoMode": False})
+            else:
+                raise Exception("Robot does not support " + str(mode))
+        else:
+            raise Exception("Robot does not support setting powermode")
+        
         return None
     
     def getMaps(self):
@@ -85,8 +138,6 @@ class CloudRobot(AbstractRobot, CachedData):
         r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.id + "/interactivemaps", headers=self.cloudclient._getHeaders())
         
         return list(map(lambda x: CloudMap(self, x), r.json()))
-        
-        return []
     
     def cleanZones(self, mapId, zoneIds, powerModes=None):
         
@@ -96,6 +147,17 @@ class CloudRobot(AbstractRobot, CachedData):
             zones = list(map(lambda zoneId: {"ZoneId": zoneId}, zoneIds))
         
         self._sendCommand({"CustomPlay": { "PersistentMapId": mapId, "Zones": zones }})
+    
+    def getCleaningSessions(self):
+        
+        r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.id + "/history", headers=self.cloudclient._getHeaders())
+        
+        return list(map(lambda item: CleaningSession(
+                starttime=datetime.datetime.fromisoformat(item["cleaningSession"]["startTime"]), 
+                duration=item["cleaningSession"]["cleaningDuration"] / 10000000.0, 
+                cleandearea=item["cleanedArea"], 
+                #endstatus=item["cleaningSession"]["completion"]
+            ), r.json()))
         
     ###
     
@@ -106,6 +168,10 @@ class CloudRobot(AbstractRobot, CachedData):
         # play|stop|home
         # curl -v https://api.delta.electrolux.com/api/Appliances/900277283814002391100106/Commands -X PUT --header "Content-Type: application/json" --header "Authorization: Bearer $TOKEN2" --data "{\"CleaningCommand\":\"home\"}" --http1.1 | jq -C .
         r = do_http("PUT", self.cloudclient.apiurl + "/Appliances/" + self.id + "/Commands", headers=self.cloudclient._getHeaders(), json=command)
+        self._mark_changed()
+    
+    def _update(self, command):
+        r = do_http("PUT", self.cloudclient.apiurl + "/Appliances/" + self.id, headers=self.cloudclient._getHeaders(), json=command)
         self._mark_changed()
 
 class CloudClient:

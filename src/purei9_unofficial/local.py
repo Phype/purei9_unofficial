@@ -52,6 +52,10 @@ class RobotClient(AbstractRobot):
         """Tell the Robot to start cleaning"""
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_STARTCLEAN, user1=RobotClient.CLEAN_PLAY))
         return True
+    
+    def spotclean(self) -> None:
+        pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_STARTCLEAN, user1=RobotClient.CLEAN_SPOT))
+        return True
         
     def gohome(self) -> None:
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_STARTCLEAN, user1=RobotClient.CLEAN_HOME))
@@ -99,6 +103,16 @@ class RobotClient(AbstractRobot):
     def getcapabilities(self) -> dict:
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GET_CAPABILITIES_REQUEST))
         return json.loads(pkt.parsed)
+    
+    def getsupportedpowermodes(self):
+        
+        capabilities = self.getcapabilities()["Capabilities"]
+        if "PowerLevels" in capabilities:
+            return [PowerMode.LOW, PowerMode.MEDIUM, PowerMode.HIGH]
+        elif "EcoMode" in capabilities:
+            return [PowerMode.MEDIUM, PowerMode.HIGH]
+        else:
+            return [PowerMode.MEDIUM]
     
     def getpowermode(self) -> PowerMode:
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GET_POWER_MODE_REQUEST))

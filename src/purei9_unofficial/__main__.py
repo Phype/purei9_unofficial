@@ -46,6 +46,9 @@ cmds_cloud_status = cmds_cloud.add_parser('status', help='Get status of all robo
 cmds_cloud_start = cmds_cloud.add_parser('start', help='Tell a robot to start cleaning.')
 cmds_cloud_start.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
 
+cmds_cloud_spot = cmds_cloud.add_parser('spot', help='Tell the robot to do a spot clean.')
+cmds_cloud_spot.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
+
 cmds_cloud_home = cmds_cloud.add_parser('home', help='Tell a robot to go home.')
 cmds_cloud_home.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
 
@@ -87,6 +90,7 @@ cmds_local_find = cmds_local.add_parser('status', help='Get status of the robot.
 cmds_local_wifi = cmds_local.add_parser('wifi', help='Get available wifi networks for the robot.')
 cmds_local_start = cmds_local.add_parser('start', help='Tell the robot to start cleaning (note: toggles between play/pause).')
 cmds_local_home = cmds_local.add_parser('home', help='Tell the robot to go home.')
+cmds_local_home = cmds_local.add_parser('spot', help='Tell the robot to do a spot clean.')
 cmds_local_pause = cmds_local.add_parser('pause', help='Tell the robot to pause cleaning (note: toggles between play/pause).')
 cmds_local_stop = cmds_local.add_parser('stop', help='Tell the robot to stop cleaning.')
 
@@ -149,10 +153,10 @@ if args.command == "cloud":
                 "status": rc.getstatus(),
                 "battery": rc.getbattery(),
                 "firmware": rc.getfirmware(),
-                "powermode": rc.getpowermode().name if args.apiversion == 1 else None
+                "powermode": rc.getpowermode().name
             }, robots))
         
-    elif args.subcommand in ["start", "home", "pause", "stop", "maps", "history", "mode", "cleanzone"]:
+    elif args.subcommand in ["start", "home", "pause", "stop", "maps", "history", "mode", "cleanzone", "spot"]:
         if args.robotid == None:
             exiterror("Requires robotid.", args_cloud)
         
@@ -160,6 +164,9 @@ if args.command == "cloud":
         
         if args.subcommand == "start":
             OUTPUT = rc.startclean()
+        
+        if args.subcommand == "spot":
+            OUTPUT = rc.spotclean()
         
         if args.subcommand == "home":
             OUTPUT = rc.gohome()
@@ -174,17 +181,17 @@ if args.command == "cloud":
             OUTPUT = []
             
             i = 0
-            for sess in rc.getCleaningSessions():
+            for sess in map(lambda x: {"starttime": x.starttime.isoformat(), "duration": x.duration, "cleandearea": x.cleandearea, "imageurl": x.imageurl, "endstatus": x.endstatus}, rc.getCleaningSessions()):
                 
                 if args.output == "table":
                     from .imageascii import draw2shade
                     
                     try:
                         if i < 10:
-                            sess["image"] = draw2shade(sess["image"]) + "_"
+                            sess["imageurl"] = draw2shade(sess["imageurl"]) + "_"
                             i += 1
                         else:
-                            sess["image"] = "(not shown)"
+                            sess["imageurl"] = "(not shown)"
                     except:
                         pass
                 
@@ -237,7 +244,7 @@ elif args.command == "local":
         rc.connect(None)
         rc.setlocalpw(args.localpw)
         
-    elif args.subcommand in ["status", "start", "pause", "stop", "home", "wifi", "mode"]:
+    elif args.subcommand in ["status", "start", "pause", "stop", "home", "wifi", "mode", "spot"]:
         if args.address == None or args.localpw == None:
             exiterror("Requires address and localpw.", args_local)
         else:
@@ -258,6 +265,8 @@ elif args.command == "local":
                 }]
             elif args.subcommand == "start":
                 OUTPUT = rc.startclean()
+            elif args.subcommand == "spot":
+                OUTPUT = rc.spotclean()
             elif args.subcommand == "home":
                 OUTPUT = rc.gohome()
             elif args.subcommand == "pause":
