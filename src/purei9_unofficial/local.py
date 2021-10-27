@@ -192,14 +192,17 @@ class RobotClient(AbstractRobot):
         self.robot_id = pkt.parsed
         logger.debug("Hello from Robot ID: " + self.robot_id)
         
-        pkt = self.sendrecv(BinaryMessage.Text(BinaryMessage.MSG_LOGIN, localpw))
+        if localpw != None:
         
-        if not(pkt.user1 == 1):
-            raise Exception("Bad localpw.")
+            pkt = self.sendrecv(BinaryMessage.Text(BinaryMessage.MSG_LOGIN, localpw))
+            
+            if not(pkt.user1 == 1):
+                raise Exception("Bad localpw.")
+    
+            pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_PING))
+            
+            logger.debug("Connection Still alive, seems we are authenticated")
         
-        pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_PING))
-        
-        logger.debug("Connection Still alive, seems we are authenticated")
         return True, version
     
     def disconnect(self) -> None:

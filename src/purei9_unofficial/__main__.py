@@ -81,6 +81,8 @@ cmds_local = args_local.add_subparsers(help='subcommand, default=find', dest="su
 
 cmds_local_find = cmds_local.add_parser('find', help='Find all robots in the local subnet.')
 
+cmds_local_setlocalpw = cmds_local.add_parser('setlocalpw', help='Set localpw to localpw specified with -l (only works on setup mode)')
+
 cmds_local_find = cmds_local.add_parser('status', help='Get status of the robot.')
 cmds_local_wifi = cmds_local.add_parser('wifi', help='Get available wifi networks for the robot.')
 cmds_local_start = cmds_local.add_parser('start', help='Tell the robot to start cleaning (note: toggles between play/pause).')
@@ -226,6 +228,14 @@ if args.command == "cloud":
 elif args.command == "local":
     if args.subcommand == "find":
         OUTPUT = list(map(lambda robot: {"address": robot.address, "id": robot.id, "name": robot.name}, find_robots()))
+        
+    elif args.subcommand in ["setlocalpw"]:
+        if args.address == None or args.localpw == None:
+            exiterror("Requires address and localpw.", args_local)
+        
+        rc = RobotClient(args.address)
+        rc.connect(None)
+        rc.setlocalpw(args.localpw)
         
     elif args.subcommand in ["status", "start", "pause", "stop", "home", "wifi", "mode"]:
         if args.address == None or args.localpw == None:

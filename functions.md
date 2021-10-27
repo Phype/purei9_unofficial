@@ -3,6 +3,8 @@ Currently implemented functions
 
 |                  |    Local    |   Cloud v1  |   Cloud v2  |
 | :---             |    :---:    |    :---:    |    :---:    |
+| Set localpw      |      ✓      |      –      |      –      |
+| Get localpw      |      –      |      ✓      |      –      |
 | Get status       |      ✓      |      ✓      |      ✓      |
 | Start robot      |      ✓      |      ✓      |      ✓      |
 | Send home        |      ✓      |      ✓      |      ✓      |
