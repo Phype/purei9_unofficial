@@ -1,30 +1,28 @@
 from enum import Enum
 
-BatteryStatus = {
-    1: "Dead",
-    2: "CriticalLow",
-    3: "Low",
-    4: "Medium",
-    5: "Normal",
-    6: "High",
-}
+class BatteryStatus(Enum):
+    Dead = 1
+    CriticalLow = 2
+    Low = 3
+    Medium = 4
+    Normal = 5
+    High = 6
 
-RobotStates = {
-    1: "Cleaning",
-    2: "Paused Cleaning",
-    3: "Spot Cleaning",
-    4: "Paused Spot Cleaning",
-    5: "Return",
-    6: "Paused Return",
-    7: "Return for Pitstop",
-    8: "Paused Return for Pitstop",
-    9: "Charging",
-    10: "Sleeping",
-    11: "Error",
-    12: "Pitstop",
-    13: "Manual Steering",
-    14: "Firmware Upgrade"
-}
+class RobotStates(Enum):
+    Cleaning = 1
+    Paused_Cleaning = 2
+    Spot_Cleaning = 3
+    Paused_Spot_Cleaning = 4
+    Return = 5
+    Paused_Return = 6
+    Return_for_Pitstop = 7
+    Paused_Return_for_Pitstop = 8
+    Charging = 9
+    Sleeping = 10
+    Error = 11
+    Pitstop = 12
+    Manual_Steering = 13
+    Firmware_Upgrade = 14
 
 class PowerMode(Enum):
     LOW = 1
@@ -54,6 +52,12 @@ class CleaningSessionResult(Enum):
     unknown15 = 15
     unknown16 = 16
     unknown17 = 17
+
+class DustbinStates(Enum):
+    unset = 0       # No information available
+    connected = 1   # Dustbin is in the robot and empty 
+    empty = 2       # Dustbin has been removed from the robot
+    full = 3        # Dustbin is full and should be emptied
 
 class CleaningSession:
     

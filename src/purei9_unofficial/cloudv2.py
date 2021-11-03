@@ -12,7 +12,7 @@ import websocket
 import requests
 import requests.auth
 
-from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, ZoneType, capabilities2model, CleaningSession
+from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, ZoneType, capabilities2model, CleaningSession, DustbinStates
 from .util import do_http, CachedData
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,12 @@ class CloudRobot(AbstractRobot, CachedData):
     
     def getstatus(self):
         status = self._getinfo()["twin"]["properties"]["reported"]["robotStatus"]
-        return RobotStates[status]
+        return RobotStates(status)
+
+    # TODO: Non Standard
+    def getdustbinstatus(self):
+        dustbinstatus = self._getinfo()["twin"]["properties"]["reported"]["dustbinStatus"]
+        return DustbinStates[dustbinstatus]
     
     def startclean(self):
         self._sendCleanCommand("play")
@@ -72,7 +77,7 @@ class CloudRobot(AbstractRobot, CachedData):
     def getbattery(self) -> str:
         """Get the current robot battery status"""
         bat = self._getinfo()["twin"]["properties"]["reported"]["batteryStatus"]
-        return BatteryStatus[bat]
+        return BatteryStatus(bat)
     
     def isconnected(self) -> bool:
         return self._getinfo()["twin"]["connectionState"] == "Connected"

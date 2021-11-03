@@ -12,7 +12,7 @@ import websocket
 import requests
 import requests.auth
 
-from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, ZoneType, capabilities2model, CleaningSession
+from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, ZoneType, capabilities2model, CleaningSession, DustbinStates
 from .util import do_http, CachedData
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class CloudRobot(AbstractRobot, CachedData):
         return capabilities2model(capabilities)
         
     def getstatus(self):
-        return RobotStates[self._getinfo()["RobotStatus"]]
+        return RobotStates(self._getinfo()["RobotStatus"])
         
     def getid(self) -> str():
         """Get the robot's id"""
@@ -76,7 +76,7 @@ class CloudRobot(AbstractRobot, CachedData):
     
     def getbattery(self) -> str:
         """Get the current robot battery status"""
-        return BatteryStatus[self._getinfo()["BatteryStatus"]]
+        return BatteryStatus(self._getinfo()["BatteryStatus"])
     
     def isconnected(self) -> bool:
         return self._getinfo()["Connected"]
@@ -185,6 +185,9 @@ class CloudRobot(AbstractRobot, CachedData):
         #    items += self.getCleaningSessions(nextptr=js["Next"])
 
         return items
+
+    def getdustbinstatus(self):
+        return DustbinStates.unset
         
     def getMaps(self):
         r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.id + "/interactivemaps", auth=self.cloudclient.httpauth)

@@ -9,7 +9,7 @@ from typing import List
 
 from .message import BinaryMessage
 
-from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, capabilities2model
+from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, capabilities2model, DustbinStates
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,10 @@ class RobotClient(AbstractRobot):
     def getstatus(self) -> str:
         """Get the current state of the robot"""
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GETSTATUS))
-        return RobotStates[pkt.user1]
+        return RobotStates(pkt.user1)
+    
+    def getdustbinstatus(self):
+        return DustbinStates.unset
     
     def startclean(self) -> None:
         """Tell the Robot to start cleaning"""
@@ -86,7 +89,7 @@ class RobotClient(AbstractRobot):
     def getbattery(self) -> str:
         """Get the current robot battery status"""
         pkt = self.sendrecv(BinaryMessage.HeaderOnly(BinaryMessage.MSG_GET_BATTERY_STATUS_REQUEST))
-        return BatteryStatus[pkt.user1]
+        return BatteryStatus(pkt.user1)
     
     def isconnected(self) -> bool:
         return self.stream != None

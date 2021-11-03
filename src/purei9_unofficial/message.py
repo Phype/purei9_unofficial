@@ -160,12 +160,15 @@ class BinaryMessage:
         return self
     
     def __str__(self):
-        return "BinaryMessage " + str({
+        return "BinaryMessage " + str(self.json())
+    
+    def json(self):
+        return {
             "magic": self.magic,
             "major": self.major,
             "minor": self.minor,
             "user1": self.user1,
             "user2": self.user2,
-            "payload": self.payload,
-            "parsed": self.parsed
-        })
+            "payload": self.payload.decode("iso-8859-1", "ignore"),
+            "parsed": self.parsed.decode("iso-8859-1", "ignore") if type(self.parsed) == bytes else self.parsed
+        }

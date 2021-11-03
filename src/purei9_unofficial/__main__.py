@@ -94,6 +94,9 @@ cmds_local_home = cmds_local.add_parser('spot', help='Tell the robot to do a spo
 cmds_local_pause = cmds_local.add_parser('pause', help='Tell the robot to pause cleaning (note: toggles between play/pause).')
 cmds_local_stop = cmds_local.add_parser('stop', help='Tell the robot to stop cleaning.')
 
+cmds_local_custom = cmds_local.add_parser('custom', help='Send custom message specified as json.')
+cmds_local_custom.add_argument("custompacket", help='JSON encoded packet')
+
 cmds_local_mode = cmds_local.add_parser('mode', help='Set a robots powermode.')
 cmds_local_mode.add_argument("-m", "--mode", type=str, choices=list(map(lambda x: x.name, list(PowerMode))), help='Mode to set.', required=True)
 
@@ -150,8 +153,9 @@ if args.command == "cloud":
                 "name": rc.getname(),
                 "localpw": rc.getlocalpw(),
                 "connected": rc.isconnected(),
-                "status": rc.getstatus(),
-                "battery": rc.getbattery(),
+                "status": rc.getstatus().name,
+                "dustbin": rc.getdustbinstatus().name,
+                "battery": rc.getbattery().name,
                 "firmware": rc.getfirmware(),
                 "powermode": rc.getpowermode().name
             }, robots))
@@ -244,7 +248,7 @@ elif args.command == "local":
         rc.connect(None)
         rc.setlocalpw(args.localpw)
         
-    elif args.subcommand in ["status", "start", "pause", "stop", "home", "wifi", "mode", "spot"]:
+    elif args.subcommand in ["status", "start", "pause", "stop", "home", "wifi", "mode", "spot", "custom"]:
         if args.address == None or args.localpw == None:
             exiterror("Requires address and localpw.", args_local)
         else:
@@ -259,10 +263,22 @@ elif args.command == "local":
                     "localpw": args.localpw,
                     "connected": rc.isconnected(),
                     "status": rc.getstatus(),
-                    "battery": rc.getbattery(),
+                    "dustbin": rc.getdustbinstatus().name,
+                    "battery": rc.getbattery().name,
                     "firmware": rc.getfirmware(),
                     "powermode": rc.getpowermode().name
                 }]
+            elif args.subcommand == "custom":
+                
+                from .message import BinaryMessage
+                
+                custompacket = json.loads(args.custompacket)
+                custompacket = BinaryMessage(**custompacket)
+                
+                OUTPUT = rc.sendrecv(custompacket).json()
+                
+                print(OUTPUT)
+            
             elif args.subcommand == "start":
                 OUTPUT = rc.startclean()
             elif args.subcommand == "spot":
