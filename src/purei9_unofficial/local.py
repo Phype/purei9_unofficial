@@ -275,6 +275,6 @@ def find_robots(timeout = 0.2 , retry_count = 1) -> List[FoundRobot]:
     s.close()
     
     if robots_found == [] and retry_count > 0:
-        return find_robots(timeout, retry_count - 1)
+        return find_robots(timeout * 2.0, retry_count - 1)
     else:
         return robots_found
