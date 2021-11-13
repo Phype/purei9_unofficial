@@ -51,7 +51,7 @@ Start a cleaning session
 
 ### local connection
 
-First you need to get your local robot pw to talk to the robot via the cloud API. Note that this only works if your robot was initalized with the old purei9 App (not the "wellbeing" App, see [issue#6](https://github.com/Phype/purei9_unofficial/issues/6)).
+First you need to get your local robot pw from the cloud API to talk to the robot on a local connection. Note that this only works if your robot was initalized with the old purei9 App (not the "wellbeing" App).
 
 	$ python -m purei9_unofficial cloud -c user@email.com:mypassword status
 	+--------------------------+---------+----------+-----------+----------+---------+----------+-----------+
@@ -60,6 +60,30 @@ First you need to get your local robot pw to talk to the robot via the cloud API
 	| 900395798357985798375972 | Cleaner | 01234567 |   True    | Sleeping |  High   |  42.19   |   HIGH    |
 	+--------------------------+---------+----------+-----------+----------+---------+----------+-----------+
 	
+### reset localpw
+If when the above command is run, localpw is blank, you can reset it using the following instructions. This does not appear to interfer with the cloud connection as it does not use the localpw after set up. (Tested firmware version 42.19 on the first generation purei9, use at your own risk)
+
+1. Flip your purei9 onto its back.
+2. Connect your laptop to its network (Network Name: 3Dvision XXX-XXXX).
+3. Search its network to local its ip address (will be different to its normal ip on your home network).
+	```
+	$ python -m purei9_unofficial local find
+	+---------------+--------------------------+---------+
+	|   Address     |         RobotID          |  Name   |
+	+---------------+--------------------------+---------+
+	| 192.168.6.1   | 900395798357985798375972 | Cleaner |
+	+---------------+--------------------------+---------+
+	```
+4. Run the setlocalpw command, the command below would set it to 01234567
+	```
+	$ python3 -m purei9_unofficial local -a 192.168.6.1 -l 01234567 setlocalpw
+	```
+5. Flip the purei9 back over and put on charge.
+6. From here local commands should work.
+
+Note there may be a small delay between the robot being put on its back and the network being available. As well as between putting it on charge and the local commands being available.
+
+
 You can also use the tool to locate any robots in the network
 
 	$ python -m purei9_unofficial local find
@@ -129,6 +153,7 @@ Now you can connect to your robot locally, get the status and start/stop it.
 	  {find,status,wifi,start,home,pause,stop,mode}
 				subcommand, default=find
 	    find                Find all robots in the local subnet.
+	    setlocalpw          Set localpw to localpw specified with -l (only works on setup mode).
 	    status              Get status of the robot.
 	    wifi                Get available wifi networks for the robot.
 	    start               Tell the robot to start cleaning (note: toggles between play/pause).
