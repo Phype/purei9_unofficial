@@ -169,10 +169,10 @@ class CloudRobot(AbstractRobot, CachedData):
         
         items = list(map(
             lambda x: CleaningSession(
-                starttime=datetime.datetime.fromisoformat(x["CleaningSession"]["StartTime"]),
-                duration=x["CleaningSession"]["CleaningDuration"] / 10000000.0, 
+                endtime=datetime.datetime.fromisoformat(x["TimeStamp"]),
+                duration=x["CleaningSession"]["CleaningDuration"] / 10000000.0 if "CleaningSession" in x else None, 
                 cleandearea=x["CleanedArea"],
-                imageurl="https://mobile.rvccloud.electrolux.com/image/map/png/" + x["CleaningSession"]["MapImageUrl"] if x["CleaningSession"]["MapImageUrl"] else None,    
+                imageurl="https://mobile.rvccloud.electrolux.com/image/map/png/" + x["CleaningSession"]["MapImageUrl"] if "CleaningSession" in x and x["CleaningSession"]["MapImageUrl"] else None,    
                 #"map": x["CleaningSession"]["PersistentMapId"],
                 #endstatus=x["CleaningSession"]["Completion"],
                 #"usererror": x["CleaningSession"]["RobotUserError"],
