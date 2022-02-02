@@ -31,7 +31,7 @@ cmds_main = args_main.add_subparsers(help='command', dest="command")
 # cloud v1/v2
 args_cloud = cmds_main.add_parser('cloud', help='Connect to electrolux purei9 cloud (old API).')
 
-args_cloud.add_argument('-v', "--apiversion", type=int, help='Cloud API version, v1=purei9, v2=wellbeing', choices=[1,2], default=1)
+args_cloud.add_argument('-v', "--apiversion", type=int, help='Cloud API version, v1=purei9, v2=wellbeing', choices=[1,2], default=2)
 
 #credentials_sub = args_cloud.add_argument_group("Credentials", "One of these is required.")
 #credentials = credentials_sub.add_mutually_exclusive_group(required=True)
