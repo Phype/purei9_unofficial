@@ -40,7 +40,16 @@ class CloudRobot(AbstractRobot, CachedData):
     # TODO: Non Standard
     def getdustbinstatus(self):
         dustbinstatus = self._getinfo()["twin"]["properties"]["reported"]["dustbinStatus"]
-        return DustbinStates[dustbinstatus]
+        
+        try:
+            return DustbinStates[dustbinstatus]
+        except:
+            
+            # Bug #16 - API sometimes returns "notConnected" instead of "empty", work-around this
+            if dustbinstatus == "notConnected":
+                return DustbinStates.empty
+            else:
+                return DustbinStates.unset
     
     def startclean(self):
         self._sendCleanCommand("play")
