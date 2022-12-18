@@ -1,5 +1,8 @@
 import struct
 
+port_tcp = 3002
+port_udp = 3000
+
 class BinaryMessage:
     
     MAGIC = 30194250
@@ -52,6 +55,23 @@ class BinaryMessage:
     def Text(minor, parsed, user1 = 0, user2 = 0):
         return BinaryMessage(BinaryMessage.MAJOR_TEXT, minor, user1, user2, parsed.encode("utf-8"))
     
+    @staticmethod
+    def StringMap(minor, parsed, user1 = 0, user2 = 0):
+        mymap = {"test": "123"}
+
+        payload = b""
+
+        for key, value in parsed.items():
+            key = key.encode("utf-8")
+            value = value.encode("utf-8")
+
+            payload += struct.pack("<I", len(key))
+            payload += key
+            payload += struct.pack("<I", len(value))
+            payload += value
+
+        return BinaryMessage(BinaryMessage.MAJOR_STRINGMAP, minor, user1, user2, payload)
+
     ###
     
     @staticmethod

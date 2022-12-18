@@ -7,9 +7,6 @@ from .local import RobotClient, find_robots
 from .credentialstore import CredentialStore, CREDENTIAL_STORE_PATH
 from .common import PowerMode
 
-from . import cloud
-from . import cloudv2
-
 # Setup logging
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
@@ -115,6 +112,9 @@ if args.debug:
     handler.setLevel(logging.DEBUG)
 
 if args.command == "cloud":
+
+    from . import cloud
+    from . import cloudv2
         
     # username = None
     # password = None
