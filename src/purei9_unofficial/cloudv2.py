@@ -262,7 +262,7 @@ class CloudMap:
         self.cloudclient = cloudrobot.cloudclient
         self.robot       = cloudrobot
         self.id          = js["id"]
-        self.interactiveid = js["interactiveId"]
+        self.interactiveid = js["interactiveId"] if "interactiveId" in js else js["interactiveMapMessageUuid"]
         
         self.name        = js["name"]
         self.zones       = list(map(lambda x: CloudZone(self, x), js["zones"]))
