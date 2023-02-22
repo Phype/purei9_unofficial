@@ -270,9 +270,16 @@ class CloudMap:
         self.info        = None
         self.image       = None
         
+        # self.getImage() # @Ekman: Uncomment this to download map images
+        
         # self._get()
         
     def getImage(self):
+        r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.robot.id + "/interactivemaps/" + self.id + "/" + "0" + "/maps/rawgzip", headers=self.cloudclient._getHeaders())
+        
+        with open("/tmp/" + self.robot.id + "-" + self.id + ".gz", "wb") as fp:
+            fp.write(r.content)
+        
         return None
     
 class CloudZone:
