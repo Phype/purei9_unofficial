@@ -167,7 +167,7 @@ class CloudRobot(AbstractRobot, CachedData):
         r = do_http("GET", self.cloudclient.apiurl + "/robots/" + self.id + "/history", headers=self.cloudclient._getHeaders())
         
         return list(map(lambda item: CleaningSession(
-                endtime=datetime.datetime.strptime(item["timeStamp"], "%Y-%m-%dT%H:%M:%S.%f"), 
+                endtime=datetime.datetime.strptime(item["timeStamp"].split(".")[0], "%Y-%m-%dT%H:%M:%S"), 
                 duration=item["cleaningSession"]["cleaningDuration"] / 10000000.0 if "cleaningSession" in item else None, 
                 cleandearea=item["cleanedArea"], 
                 #endstatus=item["cleaningSession"]["completion"]

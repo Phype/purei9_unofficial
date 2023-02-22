@@ -50,7 +50,7 @@ class TestCloud(unittest.TestCase):
         ###
         
         for session in rc.getCleaningSessions():
-            assert type(session.starttime) == datetime.datetime
+            assert type(session.endtime) == datetime.datetime
         
         ###
         # PowerMode
