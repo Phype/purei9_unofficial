@@ -25,10 +25,10 @@ args_main.add_argument("-s", '--store-credentials', action='store_true', help='S
 
 cmds_main = args_main.add_subparsers(help='command', dest="command")
 
-# cloud v1/v2
+# cloud v1/v2/v2.1
 args_cloud = cmds_main.add_parser('cloud', help='Connect to electrolux purei9 cloud (old API).')
 
-args_cloud.add_argument('-v', "--apiversion", type=int, help='Cloud API version, v1=purei9, v2=wellbeing', choices=[1,2], default=2)
+args_cloud.add_argument('-v', "--apiversion", type=int, help='Cloud API version, v1=purei9, v2=wellbeing, v21=electrolux one', choices=[1,2,21], default=2)
 
 #credentials_sub = args_cloud.add_argument_group("Credentials", "One of these is required.")
 #credentials = credentials_sub.add_mutually_exclusive_group(required=True)
@@ -115,6 +115,7 @@ if args.command == "cloud":
 
     from . import cloud
     from . import cloudv2
+    from . import cloudv2_electroluxone
         
     # username = None
     # password = None
@@ -142,6 +143,12 @@ if args.command == "cloud":
             exiterror("No crentials supplied.", args_cloud)
         
         client = cloudv2.CloudClient(username=credentialstore.cloud_email, password=credentialstore.cloud_passwort, token=credentialstore.cloud_token)
+        
+    elif args.apiversion == 21:
+        if credentialstore.cloud_email == None and credentialstore.cloud_token == None:
+            exiterror("No crentials supplied.", args_cloud)
+        
+        client = cloudv2_electroluxone.CloudClient(username=credentialstore.cloud_email, password=credentialstore.cloud_passwort, token=credentialstore.cloud_token)
         
     if args.subcommand == "status":
         
