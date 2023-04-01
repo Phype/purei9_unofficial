@@ -197,20 +197,15 @@ if args.command == "cloud":
         if args.subcommand == "history":
             OUTPUT = []
             
+            sessions = list(rc.getCleaningSessions())[:1]
+
             i = 0
-            for sess in map(lambda x: {"endtime": x.endtime.isoformat(), "duration": x.duration, "cleandearea": x.cleandearea, "imageurl": x.imageurl, "endstatus": x.endstatus}, rc.getCleaningSessions()):
-                
+            for sess in map(lambda x: {"endtime": x.endtime.isoformat(), "duration": x.duration, "cleandearea": x.cleandearea, "image": x.getImage(), "endstatus": x.endstatus}, sessions):
                 if args.output == "table":
-                    from .imageascii import draw2shade
-                    
-                    try:
-                        if i < 10:
-                            sess["imageurl"] = draw2shade(sess["imageurl"]) + "_"
-                            i += 1
-                        else:
-                            sess["imageurl"] = "(not shown)"
-                    except:
-                        pass
+                    if sess["image"] != None:
+                        sess["image"] = sess["image"].toASCII()
+                else:
+                    sess["image"] = ""
                 
                 OUTPUT.append(sess)
         
@@ -219,14 +214,12 @@ if args.command == "cloud":
         
             for m in rc.getMaps():
                 
-                js = m.getImage()
-                image = None
-                if js:
+                image = m.getImage()
+                if image:
                     if args.output == "table":
-                        from .imageascii import image_json_2_ascii
-                        image = image_json_2_ascii(js)
+                        image = image.toASCII()
                     else:
-                        image = js["PngImage"]
+                        image = "<image>"
                 
                 OUTPUT.append({
                     "image": image,

@@ -15,7 +15,7 @@ def transform(points, xya):
     #return np.matmul(points-translate, R)
     return np.matmul(R, (points - translate).T).T
 
-def plot_map(map_data_gzip: bytes):
+def plot_map(map_data_gzip: bytes, format="PNG"):
     map_data = json.loads(gzip.decompress(map_data_gzip))
     
     transform_ids = np.array([crumb["t"] for crumb in map_data['crumbs']])
@@ -47,7 +47,7 @@ def plot_map(map_data_gzip: bytes):
     width  = int(round(width * scale + 2 * point_radius)) + 4
     height = int(round(height * scale + 2 * point_radius)) + 4
 
-    image = PIL.Image.new("RGB", (width, height))
+    image = PIL.Image.new("1", (width, height))
     draw = PIL.ImageDraw.Draw(image)
 
     for p in transformed_points:
@@ -55,6 +55,9 @@ def plot_map(map_data_gzip: bytes):
         y = -3 + height - ((p[1] - min_y) * scale)
 
         draw.ellipse((x - point_radius, y - point_radius, x + point_radius, y + point_radius), fill = 'white', outline ='white')
+
+    if format == "ASCII":
+        return pic2block(image)
 
     image = image.resize((upscale*width, upscale*height), PIL.Image.BILINEAR )
     image = image.convert('L')
@@ -79,13 +82,61 @@ def plot_map(map_data_gzip: bytes):
     draw = PIL.ImageDraw.Draw(image)
     draw.ellipse((x - base_radius, y - base_radius, x + base_radius, y + base_radius), fill = 'blue', outline ='blue')
 
-    buffer = io.BytesIO()
-    image.save(buffer, format="PNG")
-    return buffer.getvalue()
+    if format == "PIL":
+        return image
+    elif format == "PNG":
+        buffer = io.BytesIO()
+        image.save(buffer, format="PNG")
+        return buffer.getvalue()
+
+BLOCKS = [
+" ",
+"▘",
+"▝",
+"▀",
+"▖",
+"▌",
+"▞",
+"▛",
+"▗",
+"▚",
+"▐",
+"▜",
+"▄",
+"▙",
+"▟",
+"█"
+]
+
+def pic2block(pic):
+    global BLOCKS
+
+    pic = pic.resize((int(pic.width), int(pic.height / 2)), PIL.Image.NEAREST)
+
+    buf = ""
+
+    h = pic.height
+    w = pic.width
+
+    for y in range(0, h-1, 2):
+        for x in range(0, w-1, 2):
+
+            a = min(1, pic.getpixel((x,y)))
+            b = min(1, pic.getpixel((x+1,y)))
+            c = min(1, pic.getpixel((x,y+1)))
+            d = min(1, pic.getpixel((x+1,y+1)))
+            
+            code = a + 2*b + 4*c + 8*d
+            
+            buf += BLOCKS[code]
+            
+        buf += "\n"
+
+    return buf
 
 if __name__ == "__main__":
     import sys
 
     with open(sys.argv[1], "rb") as fp:
         with open(sys.argv[2], "wb") as fpout:
-            fpout.write(plot_map(fp.read()))
+            fpout.write(plot_map(fp.read(), "PNG"))

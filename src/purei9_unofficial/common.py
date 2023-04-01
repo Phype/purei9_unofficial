@@ -72,6 +72,9 @@ class CleaningSession:
         self.mapid       = mapid        # map id
         self.error       = error        # String(?)
 
+    def getImage(self):
+        return None
+
 class AbstractRobot:
     
     def __init__(self):

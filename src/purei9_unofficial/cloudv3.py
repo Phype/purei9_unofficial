@@ -12,6 +12,25 @@ from .plot_map import plot_map
 
 logger = logging.getLogger(__name__)
 
+class CloudCleaningSession(CleaningSession):
+
+    def __init__(self, cloudclient, robot, sessionId, **args):
+        CleaningSession.__init__(self,  **args)
+        self.sessionId   = sessionId
+        self.robot       = robot
+        self.cloudclient = cloudclient
+
+    def getImage(self):
+        try:
+            r = do_http("GET", self.cloudclient.pureapiurl + "/appliances/" + self.robot.id + "/cleaning-sessions/" + str(self.sessionId) + "/maps", headers=self.cloudclient._getHeaders(), params={"mapFormat": "rawgzip"})
+        except:
+            return None
+        
+        with open("/tmp/map.json.gz", "wb") as fp:
+            fp.write(r.content)
+
+        return MapImage(r.content)
+
 class CloudRobot(AbstractRobot, CachedData):
     
     def __init__(self, cloudclient, id):
@@ -161,13 +180,15 @@ class CloudRobot(AbstractRobot, CachedData):
         
         r = do_http("GET", self.cloudclient.pureapiurl + "/appliances/" + self.id + "/history", headers=self.cloudclient._getHeaders())
         
-        return list(map(lambda item: CleaningSession(
+        return list(map(lambda item: CloudCleaningSession(
+                self.cloudclient, self, 
+                sessionId=item["sessionId"],
                 endtime=datetime.datetime.strptime(item["timeStamp"].split(".")[0], "%Y-%m-%dT%H:%M:%S"), 
                 duration=item["cleaningSession"]["cleaningDuration"] / 10000000.0 if "cleaningSession" in item else None, 
                 cleandearea=item["cleanedArea"], 
                 #endstatus=item["cleaningSession"]["completion"]
             ), r.json()))
-        
+    
     ###
     
     def _sendCleanCommand(self, command):
@@ -262,6 +283,16 @@ class CloudClient:
         
         return robots
 
+class MapImage:
+    def __init__(self, rawgzip):
+        self.rawgzip = rawgzip
+
+    def toPNG(self):
+        return plot_map(self.rawgzip, format="PNG")
+
+    def toASCII(self):
+        return plot_map(self.rawgzip, format="ASCII")
+
 class CloudMap:
     
     def __init__(self, cloudrobot, js):
@@ -283,9 +314,9 @@ class CloudMap:
         
         # self._get()
         
-    def getImage(self):       
+    def getImage(self):
         r = do_http("GET", self.cloudclient.pureapiurl + "/appliances/" + self.robot.id + "/interactive-maps/" + self.id + "/sequences/" + str(self.sequenceNumber) + "/maps", headers=self.cloudclient._getHeaders(), params={"mapFormat": "rawgzip"})
-        return plot_map(r.content)
+        return MapImage(r.content)
     
 class CloudZone:
     
