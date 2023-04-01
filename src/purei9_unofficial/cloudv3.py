@@ -3,10 +3,12 @@ import time
 import logging
 import datetime
 
+
 from typing import List
 
 from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, ZoneType, capabilities2model, CleaningSession, DustbinStates
 from .util import do_http, CachedData
+from .plot_map import plot_map
 
 logger = logging.getLogger(__name__)
 
@@ -283,11 +285,7 @@ class CloudMap:
         
     def getImage(self):       
         r = do_http("GET", self.cloudclient.pureapiurl + "/appliances/" + self.robot.id + "/interactive-maps/" + self.id + "/sequences/" + str(self.sequenceNumber) + "/maps", headers=self.cloudclient._getHeaders(), params={"mapFormat": "rawgzip"})
-        
-        with open("D:\\" + self.robot.id + "-" + self.id + ".gz", "wb") as fp:
-            fp.write(r.content)
-        
-        return None
+        return plot_map(r.content)
     
 class CloudZone:
     
