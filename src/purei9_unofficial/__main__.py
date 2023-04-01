@@ -25,10 +25,10 @@ args_main.add_argument("-s", '--store-credentials', action='store_true', help='S
 
 cmds_main = args_main.add_subparsers(help='command', dest="command")
 
-# cloud v1/v2
+# cloud v1/v2/v2.1
 args_cloud = cmds_main.add_parser('cloud', help='Connect to electrolux purei9 cloud (old API).')
 
-args_cloud.add_argument('-v', "--apiversion", type=int, help='Cloud API version, v1=purei9, v2=wellbeing', choices=[1,2], default=2)
+args_cloud.add_argument('-v', "--apiversion", type=int, help='Cloud API version, 1=purei9, 2=wellbeing, 3=electrolux one', choices=[1,2,3], default=2)
 
 #credentials_sub = args_cloud.add_argument_group("Credentials", "One of these is required.")
 #credentials = credentials_sub.add_mutually_exclusive_group(required=True)
@@ -121,9 +121,6 @@ if args.command == "cloud":
         parts = args.credentials.split(":", 2)
         credentialstore.cloud_email = parts[0]
         credentialstore.cloud_passwort = parts[1]
-    
-    if args.token != None:
-        credentialstore.cloud_token = args.token
         
     client = None
         
@@ -134,16 +131,31 @@ if args.command == "cloud":
             exiterror("No crentials supplied.", args_cloud)
         
         client = cloud.CloudClient(credentialstore.cloud_email, credentialstore.cloud_passwort)
-        credentialstore.save()
         
     elif args.apiversion == 2:
         from . import cloudv2
+
+        if args.token != None:
+            credentialstore.cloud_token = args.token
 
         if credentialstore.cloud_email == None and credentialstore.cloud_token == None:
             exiterror("No crentials supplied.", args_cloud)
         
         client = cloudv2.CloudClient(username=credentialstore.cloud_email, password=credentialstore.cloud_passwort, token=credentialstore.cloud_token)
         
+    elif args.apiversion == 3:
+        from . import cloudv3
+
+        if args.token != None:
+            credentialstore.cloud_token_v3 = args.token
+
+        if credentialstore.cloud_email == None and credentialstore.cloud_token_v3 == None:
+            exiterror("No crentials supplied.", args_cloud)
+        
+        client = cloudv3.CloudClient(username=credentialstore.cloud_email, password=credentialstore.cloud_passwort, token=credentialstore.cloud_token_v3)
+        
+    credentialstore.save()
+    
     if args.subcommand == "status":
         
         robots = client.getRobots()
@@ -233,7 +245,9 @@ if args.command == "cloud":
         exiterror("Subcommand not specifed.", args_cloud)
             
     if args.apiversion == 2:
-        credentialstore.cloud_token = client.gettoken()
+        credentialstore.cloud_token = client.gettoken()      
+    elif args.apiversion == 3:
+        credentialstore.cloud_token_v3 = client.gettoken()
     
     credentialstore.save()
 
