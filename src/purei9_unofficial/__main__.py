@@ -197,8 +197,7 @@ if args.command == "cloud":
         if args.subcommand == "history":
             OUTPUT = []
             
-            sessions = list(rc.getCleaningSessions())[:10]
-
+            sessions = list(rc.getCleaningSessions())
             i = 0
             for sess in map(lambda x: {"endtime": x.endtime.isoformat(), "duration": x.duration, "cleandearea": x.cleandearea, "image": x, "endstatus": x.endstatus}, sessions):
                 if args.output == "table":
