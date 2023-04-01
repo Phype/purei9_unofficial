@@ -197,15 +197,25 @@ if args.command == "cloud":
         if args.subcommand == "history":
             OUTPUT = []
             
-            sessions = list(rc.getCleaningSessions())[:1]
+            sessions = list(rc.getCleaningSessions())[:10]
 
             i = 0
-            for sess in map(lambda x: {"endtime": x.endtime.isoformat(), "duration": x.duration, "cleandearea": x.cleandearea, "image": x.getImage(), "endstatus": x.endstatus}, sessions):
+            for sess in map(lambda x: {"endtime": x.endtime.isoformat(), "duration": x.duration, "cleandearea": x.cleandearea, "image": x, "endstatus": x.endstatus}, sessions):
                 if args.output == "table":
                     if sess["image"] != None:
-                        sess["image"] = sess["image"].toASCII()
+                        if i < 2:
+                            img = sess["image"].getImage()
+                            if img:
+                                sess["image"] = img.toASCII()
+                            else:
+                                sess["image"] = ""
+                        else:
+                            sess["image"] = ""
+
                 else:
                     sess["image"] = ""
+
+                i += 1
                 
                 OUTPUT.append(sess)
         
