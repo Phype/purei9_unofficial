@@ -12,6 +12,7 @@ class CredentialStore:
         self.cloud_email    = None
         self.cloud_passwort = None
         self.cloud_token    = None
+        self.cloud_token_v3 = None
         
         self.load()
         
@@ -27,6 +28,7 @@ class CredentialStore:
                     "cloud_email": self.cloud_email,
                     "cloud_passwort": self.cloud_passwort,
                     "cloud_token": self.cloud_token,
+                    "cloud_token_v3": self.cloud_token_v3,
                 }, indent=4))
             
     def load(self):
@@ -43,6 +45,7 @@ class CredentialStore:
                     self.cloud_email = data["cloud_email"]
                     self.cloud_passwort = data["cloud_passwort"]
                     self.cloud_token = data["cloud_token"]
+                    self.cloud_token_v3 = data["cloud_token_v3"]
             except:
                 pass
         
