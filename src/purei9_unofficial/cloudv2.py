@@ -8,7 +8,6 @@ import datetime
 
 from typing import List
 
-import websocket
 import requests
 import requests.auth
 

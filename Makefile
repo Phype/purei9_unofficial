@@ -4,7 +4,7 @@ all:
 	@echo "usage: make [test | build | upload | clean]"
 
 test:
-	nosetests -v --nologcapture
+	pytest
 
 build:
 	python3 -m pip install --upgrade build

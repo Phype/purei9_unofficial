@@ -1,3 +1,6 @@
+# Disabled: This API is no longer active
+
+"""
 import itertools
 import unittest
 import time
@@ -75,3 +78,4 @@ class TestCloud(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+"""

@@ -112,9 +112,6 @@ if args.debug:
     handler.setLevel(logging.DEBUG)
 
 if args.command == "cloud":
-
-    from . import cloud
-    from . import cloudv2
         
     # username = None
     # password = None
@@ -131,6 +128,8 @@ if args.command == "cloud":
     client = None
         
     if args.apiversion == 1:
+        from . import cloud
+
         if credentialstore.cloud_email == None:
             exiterror("No crentials supplied.", args_cloud)
         
@@ -138,6 +137,8 @@ if args.command == "cloud":
         credentialstore.save()
         
     elif args.apiversion == 2:
+        from . import cloudv2
+
         if credentialstore.cloud_email == None and credentialstore.cloud_token == None:
             exiterror("No crentials supplied.", args_cloud)
         
