@@ -1,21 +1,22 @@
 Currently implemented functions
 -------------------------------
 
-|                  |    Local    |   Cloud v1  |   Cloud v2  |
-| :---             |    :---:    |    :---:    |    :---:    |
-| Set localpw      |      ✓      |      –      |      –      |
-| Get localpw      |      –      |      ✓      |      –      |
-| Get status       |      ✓      |      ✓      |      ✓      |
-| Start robot      |      ✓      |      ✓      |      ✓      |
-| Send home        |      ✓      |      ✓      |      ✓      |
-| Stop  robot      |      ✓      |      ✓      |      ✓      |
-| Pause robot      |✓<sup>1</sup>|      ✓      |      ✓      |
-| Clean zone       |      –      |      ✓      |      ✓      |
-| Change powermode |      ✓      |      ✓      |      ✓      |
-| List wifis       |      ✓      |      –      |      –      |
-| List maps/zones  |      –      |      ✓      |      ✓      |
-| Map/zone images  |      –      |     (✓)     |             |
-| Get history      |      –      |      ✓      |      ✓      |
+|                  |    Local    |   Cloud v1  |   Cloud v2  |   Cloud v3  |
+| :---             |    broken?  |discontinued |    :---:    |    :---:    |
+| :---             |    :---:    |    :---:    |    :---:    |    :---:    |
+| Set localpw      |      ✓      |      –      |      –      |      –      |
+| Get localpw      |      –      |      ✓      |      –      |      –      |
+| Get status       |      ✓      |      ✓      |      ✓      |      ✓      |
+| Start robot      |      ✓      |      ✓      |      ✓      |      ✓      |
+| Send home        |      ✓      |      ✓      |      ✓      |      ✓      |
+| Stop  robot      |      ✓      |      ✓      |      ✓      |      ✓      |
+| Pause robot      |✓<sup>1</sup>|      ✓      |      ✓      |      ✓      |
+| Clean zone       |      –      |      ✓      |      ✓      |      ✓      |
+| Change powermode |      ✓      |      ✓      |      ✓      |      ✓      |
+| List wifis       |      ✓      |      –      |      –      |      –      |
+| List maps/zones  |      –      |      ✓      |      ✓      |      ✓      |
+| Map/zone images  |      –      |     (✓)     |             |             |
+| Get history      |      –      |      ✓      |      ✓      |      ✓      |
 
 ✓: works  
 (✓): works, but needs refactoring for cross-API support  
