@@ -60,8 +60,11 @@ cmds_cloud_maps.add_argument("-r", "--robotid", type=str, help='ID of robot.', r
 
 cmds_cloud_cleanzone = cmds_cloud.add_parser('cleanzone', help='Clean a specific zone.')
 cmds_cloud_cleanzone.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
-cmds_cloud_cleanzone.add_argument("--mapid", type=str, help='Persisten Map id.', required=True)
-cmds_cloud_cleanzone.add_argument("--zoneid", type=str, help='Persisten Zone id.', required=True)
+
+cmds_cloud_cleanzone.add_argument("--mapid",    type=str, help='Persisten Map id.',  required=False)
+cmds_cloud_cleanzone.add_argument("--zoneid",   type=str, help='Persisten Zone id.', required=False)
+cmds_cloud_cleanzone.add_argument("--mapname",  type=str, help='Persisten Map name.',  required=False)
+cmds_cloud_cleanzone.add_argument("--zonename", type=str, help='Persisten Zone name.', required=False)
 
 cmds_cloud_history = cmds_cloud.add_parser('history', help='List history (experimental).')
 cmds_cloud_history.add_argument("-r", "--robotid", type=str, help='ID of robot.', required=True)
@@ -236,7 +239,46 @@ if args.command == "cloud":
                 })
         
         if args.subcommand == "cleanzone":
-            rc.cleanZones(args.mapid, [args.zoneid])
+        
+            cloudmap = None
+            cloudzone = None
+        
+            if args.mapid == None and args.mapname == None:
+                exiterror("Requires mapid or mapname.", args_cloud)
+                    
+            if args.zoneid == None and args.zonename == None:
+                exiterror("Requires zoneid or zonename.", args_cloud)
+                    
+            for m in rc.getMaps():
+                if args.mapid != None and args.mapid == m.id:
+                    cloudmap = m
+                    break
+                    
+                if args.mapname != None and args.mapname == m.name:
+                    cloudmap = m
+                    break
+            
+            if cloudmap == None:
+                exiterror("Map not found.", args_cloud)
+                
+            logger.debug("Map found: " + cloudmap.id)
+                
+            for zone in cloudmap.zones:
+                
+                if args.zoneid != None and args.zoneid == zone.id:
+                    cloudzone = zone
+                    break
+                    
+                if args.zonename != None and args.zonename == zone.name:
+                    cloudzone = zone
+                    break
+                
+            logger.debug("Zone found: " + zone.id)
+            
+            if cloudzone == None:
+                exiterror("Zone not found.", args_cloud)
+                    
+            rc.cleanZones(cloudmap.id, [cloudzone.id])
                 
         if args.subcommand == "mode":
             OUTPUT = rc.setpowermode(PowerMode[args.mode])
