@@ -4,7 +4,7 @@ all:
 	@echo "usage: make [test | build | upload | clean]"
 
 test:
-	pytest
+	pytest --log-cli-level=DEBUG
 
 build:
 	python3 -m pip install --upgrade build

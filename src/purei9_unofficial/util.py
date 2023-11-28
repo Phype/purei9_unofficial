@@ -13,7 +13,7 @@ def do_http(method, url, retries=2, **kwargs):
         
         # Hide access tokens from log
         if r.text:
-            if "accessToken" in r.text:
+            if "accessToken" in r.text or "idToken" in r.text:
                 logger.debug("HTTP " + str(r.status_code) + " " + str(r) + " " + "(sensitive data not shown)")
             else:
                 logger.debug("HTTP " + str(r.status_code) + " " + str(r) + " " + r.text)
