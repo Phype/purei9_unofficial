@@ -264,17 +264,25 @@ class CloudMap:
     
     def __init__(self, cloudrobot, js):
         
-        self.cloudclient = cloudrobot.cloudclient
-        self.robot       = cloudrobot
-        self.id          = js["id"]
+        self.cloudclient    = cloudrobot.cloudclient
+        self.robot          = cloudrobot
+        self.id             = js["id"]
         
-        self.name        = js["name"]
-        try:
-            self.zones       = list(map(lambda x: CloudZone(self, x), js["zones"]))
-        except:
+        if "name" in js:
+            self.name = js["name"]
+        else:
+            self.name = None
+        
+        if "zones" in js:
+            self.zones = list(map(lambda x: CloudZone(self, x), js["zones"]))
+        else:
             self.zones = []
         
-        self.sequenceNumber = js["sequenceNumber"]
+        if "sequenceNumber" in js:
+            self.sequenceNumber = js["sequenceNumber"]
+        else:
+            self.sequenceNumber = None
+        
         self.info        = None
         self.image       = None
         
