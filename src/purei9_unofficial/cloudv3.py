@@ -267,7 +267,6 @@ class CloudMap:
         self.cloudclient = cloudrobot.cloudclient
         self.robot       = cloudrobot
         self.id          = js["id"]
-        self.interactiveid = js["interactiveId"] if "interactiveId" in js else js["interactiveMapMessageUuid"]
         
         self.name        = js["name"]
         try:
