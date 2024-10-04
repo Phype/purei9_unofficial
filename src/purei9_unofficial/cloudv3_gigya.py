@@ -46,7 +46,7 @@ def gigya_test_sign():
     session_secret = base64.b64encode(binascii.unhexlify("6ac75adf86ac7dab1f8fd7ee6a")).decode("utf-8")
     print(session_secret)
 
-    sig = sign(session_secret, "POST", "https://sociallize.us1.gigya.com/socialize.getSDKConfig", params)
+    sig = gigya_sign(session_secret, "POST", "https://sociallize.us1.gigya.com/socialize.getSDKConfig", params)
 
     print(sig)
     print("nC69hzGbTdPW3WlUl6k0ZeCd0CY")
