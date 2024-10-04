@@ -119,8 +119,6 @@ def capabilities2model(capabilities):
     
     capabilities = set(map(lambda x: x.lower(), capabilities.keys()))
     
-    print(capabilities)
-    
     if ("powerlevels" in capabilities) and not("ecomode" in capabilities):
         return "PUREi9.2"
     elif not("powerlevels" in capabilities) and ("ecomode" in capabilities):

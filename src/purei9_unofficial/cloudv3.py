@@ -5,6 +5,7 @@ import datetime
 
 from typing import List
 
+from .cloudv3_gigya import gigya_login
 from .common import AbstractRobot, RobotStates, BatteryStatus, PowerMode, ZoneType, capabilities2model, CleaningSession, DustbinStates
 from .util import do_http, CachedData
 
@@ -183,9 +184,10 @@ class CloudClient:
     
     def __init__(self, username=None, password=None, token=None):
         
-        self.client_id     = "ElxOneApp"
-        self.client_secret = "8UKrsKD7jH9zvTV7rz5HeCLkit67Mmj68FvRVTlYygwJYy4dW6KF2cVLPKeWzUQUd6KJMtTifFf4NkDnjI7ZLdfnwcPtTSNtYvbP7OzEkmQD9IjhMOf5e1zeAQYtt2yN"
-        self.x_api_key = "2AMqwEV5MqVhTKrRCyYfVF8gmKrd2rAmp7cUsfky"
+        self.client_id     = "AEGOneApp"
+        self.client_secret = "G6PZWyneWAZH6kZePRjZAdBbyyIu3qUgDGUDkat7obfU9ByQSgJPNy8xRo99vzcgWExX9N48gMJo3GWaHbMJsohIYOQ54zH2Hid332UnRZdvWOCWvWNnMNLalHoyH7xU"
+        self.user_agent    = "AEG/2.26 android/10"
+        self.x_api_key     = "PEdfAP7N7sUc95GJPePDU54e2Pybbt6DZtdww7dz"
         
         self.baseurl = "https://api.ocp.electrolux.one"
         self.authorizationurl = self.baseurl + "/one-account-authorization/api/v1"
@@ -219,26 +221,24 @@ class CloudClient:
         
         if not(self.token) or time.time() > self.token["expires"]:
             
-            r = do_http("POST", self.authorizationurl + "/token", json={"clientId": self.client_id,
-                                                                "clientSecret": self.client_secret,
-                                                                "grantType": "client_credentials"})
-            self.settoken(r.text)
+            idToken, countryCode = gigya_login(self.username, self.password)
             
-            r = do_http("POST", self.authenticationurl + "/authenticate", json={"username":self.username, "password": self.password}, headers={"Authorization": "Bearer " + self.token["accessToken"],
-                                                                                                                                     "x-api-key": self.x_api_key})
-            
-            idToken = json.loads(r.text)["idToken"]
-            countryCode = json.loads(r.text)["countryCode"]
-            
-            r = do_http("POST", self.authorizationurl + "/token", json={"clientId": self.client_id,
-                                                                "idToken": idToken,
-                                                                "grantType": "urn:ietf:params:oauth:grant-type:token-exchange"},
-                        headers={"Origin-Country-Code": countryCode})
+            r = do_http("POST", self.authorizationurl + "/token", json={
+                "clientId": self.client_id,
+                "idToken": idToken,
+                "grantType": "urn:ietf:params:oauth:grant-type:token-exchange"
+            }, headers={
+                "Origin-Country-Code": countryCode,
+                "User-Agent": self.user_agent
+            })
             
             self.settoken(r.text)
         
-        return {"Authorization": "Bearer " + self.token["accessToken"],
-                "x-api-key": self.x_api_key}
+        return {
+            "Authorization": "Bearer " + self.token["accessToken"],
+            "x-api-key": self.x_api_key,
+            "User-Agent": self.user_agent
+        }
     
     def tryLogin(self):
         self.getRobots()
