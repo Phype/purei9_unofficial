@@ -8,10 +8,15 @@ Compatibility
 
 Tested with an AEX RX9 (aka purei9) first Generation and second (aka purei9.2) Generation.
 
-Security
---------
+Links
+-------------
 
-Other than the purei9 app, this tool does not verify the robot's TLS certificate when using it in "local" mode, so beware of MitMs in your LAN, eavedropping on your robot. In case you are curious how the trust model works anyway: The TLS certificate of the robot is self signed and verified against a known public key which is gathered from the purei9 cloud.
+In case you are just looking on using this, here are some links to alternative/related projects:
+
+ - https://github.com/Ekman/home-assistant-pure-i9 - Homeassistant integration based on this library
+ 	- https://github.com/Phype/home-assistant-pure-i9 (my fork which sometimes has newer versions of purei9_unofficial, but is generally less polished)
+ - https://github.com/JohNan/pyelectroluxgroup - Alternative python library which uses the new open API (https://developer.electrolux.one/)
+ - https://github.com/JohNan/homeassistant-wellbeing - Homeassistant integration based on the pyelectroluxgroup library
 
 Disclaimer
 ----------
@@ -51,6 +56,8 @@ Start a cleaning session
 
 ### local connection
 
+**NOTE: Local mode seems to have been disabled for the purei9 and Purei9.2 models with a firmware update.**
+
 First you need to get your local robot pw from the cloud API to talk to the robot on a local connection. Note that this only works if your robot was initalized with the old purei9 App (not the "wellbeing" App).
 
 	$ python -m purei9_unofficial cloud -c user@email.com:mypassword status
@@ -60,7 +67,7 @@ First you need to get your local robot pw from the cloud API to talk to the robo
 	| 900395798357985798375972 | Cleaner | 01234567 |   True    | Sleeping |  High   |  42.19   |   HIGH    |
 	+--------------------------+---------+----------+-----------+----------+---------+----------+-----------+
 	
-### reset localpw
+#### reset localpw
 If when the above command is run, localpw is blank, you can reset it using the following instructions. This does not appear to interfer with the cloud connection as it does not use the localpw after set up. (Tested firmware version 42.19 on the first generation purei9, use at your own risk)
 
 1. Flip your purei9 onto its back.
@@ -176,25 +183,4 @@ Now you can connect to your robot locally, get the status and start/stop it.
 Library usage
 -------------
 
-If you want to use the library instead, here is some example code which assumes (1) you only have one robot in your electrolux account and (2) the robot is located in the same network as the computer you are running the code on. You can also have a look at the [CLI implementation](./src/purei9_unofficial/__main__.py).
-
-    from purei9_unofficial.cloud import CloudClient
-    from purei9_unofficial.local import RobotClient, find_robots
-
-    # Get the list of robots in the cloud account
-    cloudclient  = CloudClient("account_email", "account_password")
-    robots       = cloudclient.getRobots()
-
-    # Get the local robot password to authenticate at our robot
-    localpw      = robots[0].getlocalpw()
-
-    # Get the robots in our network
-    local_robots = find_robots()
-
-    # Create a RobotClient to connect to it
-    robotclient  = RobotClient(local_robots[0].address)
-    robotclient.connect(localpw)
-
-    # Gets the status
-    print(robotclient.getstatus())
-
+If you want to use the library instead, please have a look at the [CLI implementation](./src/purei9_unofficial/__main__.py).
