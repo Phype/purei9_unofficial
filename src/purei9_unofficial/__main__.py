@@ -35,7 +35,7 @@ args_cloud.add_argument('-v', "--apiversion", type=int, help='Cloud API version,
 
 args_cloud.add_argument('-c', "--credentials", type=str, help='elecrolux cloud credentails in username:password format')
 args_cloud.add_argument('-t', "--token", type=str, help='electrolux v2 API token')
-args_cloud.add_argument("--country", type=str, help='electrolux v2 API token')
+args_cloud.add_argument("--country", type=str, help='2-character country code of your account, e.g. "SE", "US", etc.')
 
 cmds_cloud = args_cloud.add_subparsers(help='subcommand, default=status', dest="subcommand")
 
