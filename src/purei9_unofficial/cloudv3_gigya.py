@@ -74,12 +74,11 @@ def gigya_print_http(r):
     """
     return
 
-def gigya_login(email, password):
+def gigya_login(email, password, gigya_apikey, gigya_domain):
 
-    gigya_apikey    = "4_gqndGblq7WL-gUbN2WzM4A"
     gigya_useragent = "okhttp/4.10.0"
 
-    r = do_http("POST", "https://socialize.us1.gigya.com/socialize.getIDs", headers={
+    r = do_http("POST", "https://socialize." + gigya_domain + "/socialize.getIDs", headers={
         "apikey": gigya_apikey,
         "user-agent": gigya_useragent,
         "content-type": "application/x-www-form-urlencoded"
@@ -101,7 +100,7 @@ def gigya_login(email, password):
     gigya_gmid = data["gmid"]
     gigya_gcid = data["gcid"]
 
-    r = do_http("POST", "https://accounts.us1.gigya.com/accounts.login", headers={
+    r = do_http("POST", "https://accounts." + gigya_domain + "/accounts.login", headers={
         "apikey": gigya_apikey,
         "user-agent": gigya_useragent,
         "content-type": "application/x-www-form-urlencoded"
@@ -143,7 +142,7 @@ def gigya_login(email, password):
         "ucid": gigya_ucid
     }
 
-    url = "https://accounts.us1.gigya.com/accounts.getJWT"
+    url = "https://accounts." + gigya_domain + "/accounts.getJWT"
     params["sig"] = gigya_sign(gigya_session_secret, "POST", url, params)
 
     r = do_http("POST", url, headers={

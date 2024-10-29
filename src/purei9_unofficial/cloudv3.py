@@ -182,7 +182,7 @@ class CloudRobot(AbstractRobot, CachedData):
 
 class CloudClient:
     
-    def __init__(self, username=None, password=None, token=None):
+    def __init__(self, username=None, password=None, token=None, countrycode=None):
         
         self.client_id     = "AEGOneApp"
         self.client_secret = "G6PZWyneWAZH6kZePRjZAdBbyyIu3qUgDGUDkat7obfU9ByQSgJPNy8xRo99vzcgWExX9N48gMJo3GWaHbMJsohIYOQ54zH2Hid332UnRZdvWOCWvWNnMNLalHoyH7xU"
@@ -190,11 +190,13 @@ class CloudClient:
         self.x_api_key     = "PEdfAP7N7sUc95GJPePDU54e2Pybbt6DZtdww7dz"
         
         self.baseurl = "https://api.ocp.electrolux.one"
+        self.userurl = self.baseurl + "/one-account-user/api/v1"
         self.authorizationurl = self.baseurl + "/one-account-authorization/api/v1"
         self.authenticationurl = self.baseurl + "/one-account-authentication/api/v1"
         self.apiurl  = self.baseurl + "/appliance/api/v2"
         self.pureapiurl = self.baseurl + "/purei/api/v2"
         self.headers = {}
+        self.countrycode = countrycode
         
         self.username = username
         self.password = password
@@ -217,11 +219,29 @@ class CloudClient:
         else:
             self.token = None
         
-    def _getHeaders(self):
+    def _getHeaders(self, no_login=False):
         
-        if not(self.token) or time.time() > self.token["expires"]:
+        if not(no_login) and (not(self.token) or time.time() > self.token["expires"]):
             
-            idToken, countryCode = gigya_login(self.username, self.password)
+            r = do_http("POST", self.authorizationurl + "/token", json={
+                "clientId": self.client_id,
+                "clientSecret": self.client_secret,
+                "grantType": "client_credentials",
+                "scope": ""
+            }, headers={
+                "x-api-key": self.x_api_key,
+                "User-Agent": self.user_agent,
+                "Authorization": "Bearer",
+            })
+
+            self.settoken(r.text)
+
+            r = do_http("GET", self.userurl + "/identity-providers?brand=aeg&countryCode=" + self.countrycode,
+                headers=self._getHeaders(no_login=True))
+
+            data = r.json()[0]
+            self.baseurl = data["httpRegionalBaseUrl"]
+            idToken, countryCode = gigya_login(self.username, self.password, data["apiKey"], data["domain"])
             
             r = do_http("POST", self.authorizationurl + "/token", json={
                 "clientId": self.client_id,
@@ -237,7 +257,8 @@ class CloudClient:
         return {
             "Authorization": "Bearer " + self.token["accessToken"],
             "x-api-key": self.x_api_key,
-            "User-Agent": self.user_agent
+            "User-Agent": self.user_agent,
+            "Context-Brand": "aeg"
         }
     
     def tryLogin(self):

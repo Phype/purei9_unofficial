@@ -35,6 +35,7 @@ args_cloud.add_argument('-v', "--apiversion", type=int, help='Cloud API version,
 
 args_cloud.add_argument('-c', "--credentials", type=str, help='elecrolux cloud credentails in username:password format')
 args_cloud.add_argument('-t', "--token", type=str, help='electrolux v2 API token')
+args_cloud.add_argument("--country", type=str, help='electrolux v2 API token')
 
 cmds_cloud = args_cloud.add_subparsers(help='subcommand, default=status', dest="subcommand")
 
@@ -155,7 +156,7 @@ if args.command == "cloud":
         if credentialstore.cloud_email == None and credentialstore.cloud_token_v3 == None:
             exiterror("No crentials supplied.", args_cloud)
         
-        client = cloudv3.CloudClient(username=credentialstore.cloud_email, password=credentialstore.cloud_passwort, token=credentialstore.cloud_token_v3)
+        client = cloudv3.CloudClient(username=credentialstore.cloud_email, password=credentialstore.cloud_passwort, token=credentialstore.cloud_token_v3, countrycode=args.country)
         
     credentialstore.save()
     
