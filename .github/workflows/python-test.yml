@@ -50,3 +50,4 @@ jobs:
       env:
         test_email: ${{ secrets.ELECTROLUX_TEST_EMAIL }}
         test_password: ${{ secrets.ELECTROLUX_TEST_PASSWORD }}
+        test_countrycode: ${{ secrets.ELECTROLUX_TEST_COUNTRY }}

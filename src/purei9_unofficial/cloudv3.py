@@ -202,7 +202,11 @@ class CloudClient:
         self.password = password
         
         self.token = None
-        self.settoken(token)
+
+        if token:
+            self.settoken(token)
+        elif countrycode == None:
+            raise Exception("Need countrycode to use username/password authentication")
         
     def gettoken(self):
         return json.dumps(self.token)

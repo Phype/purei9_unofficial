@@ -87,7 +87,8 @@ class TestCloud(unittest.TestCase):
             break
 
     def test_norobots(self):
-        cc = CloudClient(os.environ["test_email"], os.environ["test_password"])
+        cc = CloudClient(username=os.environ["test_email"], password=os.environ["test_password"], countrycode=os.environ["test_countrycode"])
+
         cc.tryLogin()
         
         ###
